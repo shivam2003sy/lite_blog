@@ -1,0 +1,67 @@
+{% extends "layouts/base.html" %}
+{% block title %} Login {% endblock %} 
+{% block content %}
+    <section>
+        <div class="modal-body row">
+            <div class="col-md-6">
+              <!-- Your first column here -->
+              shivam singh
+            </div>
+            <div class="col-md-6 mt-4">
+                <div class="container ">
+                    <div class="row align-items-center justify-content-center ">
+                        <div>
+                            <div class="card shadow zindex-100 mb-0">
+                                <div class="card-body">
+                                    <div class="mb-5">
+                                        <h6 class="h3">
+                                     Login To Your Account
+                                        </h6>
+                                        <p class="text-muted mb-0">
+                                            {% if msg %}
+                                                {{ msg | safe }}
+                                            {% else %}
+                                                <small>Not registered?</small>
+                                                <a href="{{ url_for('register') }}" class="small font-weight-bold">Create account</a>   
+                                            {% endif %}     
+                                        </p>
+                                    </div>
+                                    <span class="clearfix"></span>
+                                    <form method="post" action="" class="mt-4">
+        
+                                        {{ form.hidden_tag() }}
+        
+                                        <div class="form-group">
+                                            <label class="form-control-label">Username</label>
+                                            <div class="input-group">
+                                                {{ form.username(class="form-control") }}
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-group mb-1 mt-2">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div>
+                                                    <label class="form-control-label">Password</label>
+                                                </div>
+                                            </div>
+                                            <div class="input-group">
+                                                {{ form.password(class="form-control", type="password") }}
+                                            </div>
+                                        </div>
+        
+                                        <div class="mt-4">
+                                            <button type="submit" name="login" class="btn btn-block btn-primary">Sign in</button></div>
+                                    </form>
+                                </div>
+                               
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+              
+            </div>
+          </div>
+       
+
+{% endblock content %}

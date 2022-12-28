@@ -1,0 +1,110 @@
+{% extends "layouts/base-all.html" %}
+{% block title %} Board {% endblock %}
+{% block content %}
+<!-- Main content -->
+
+<section>
+    <div class="container-fluid">
+        <div class="row">
+        <div class="col-md-3">
+            <div class="card mt-5">
+            <div class="card-body">
+                <div class="d-flex justify-content-center">
+                <img src="/static/img/logoh.png" alt="logo" width="250"  height="40"/>
+                </div>
+                <div class="d-flex justify-content-center">
+                <h4 class="mt-3"> {{user.user}} </h4>
+                </div>
+                <div class="d-flex justify-content-center">
+                <p class="mt-3"> {{user.email}} </p>
+                </div>
+                <div class="d-flex justify-content-center">
+                <p class="mt-3">{{user.bio}}</p>
+                </div>
+                {% if user.id in unfollow %}
+                <div class= 'd-flex justify-content-center'>
+                  <button type="button" class="btn btn-outline-danger" onclick="unfollow(`{{user.id}}`)">Unfollow</button>
+                </div>
+                {% elif user.id in follow_back %}
+                <div class= 'd-flex justify-content-center'>
+                  <button type="button" class="btn btn-outline-primary" onclick="follow(`{{user.id}}`)">Follow Back</button>
+                </div>
+                {% else %}
+                <div class= 'd-flex justify-content-center'>
+                  <button type="button" class="btn btn-primary" onclick="follow(`{{user.id}}`)">Follow</button>
+                </div> 
+                {% endif %}
+                <div class="d-flex justify-content-center">
+                <p class="mt-3"> Posts  : {{user.userprofile.no_of_posts}} </p>
+                </div>
+            </div>
+            </div>
+        </div>
+        <div class="col-md-9">
+          <div class="card mt-5">
+            <div class="card-body">
+              <div class="d-flex justify-content-center">
+                <h4 class="mt-3">Blogs </h4>
+              </div>
+            </div>
+          </div>
+        
+          <div class="card mt-3" >
+            <div class="card-body">
+              <div class="d-flex justify-content-center">
+                <!-- galary of post -->
+                <div class="row">
+                  {% for post in posts %}
+                    <div class="col-md-auto">
+                      <div class="card mt-5">
+                        <div class="card-title">
+                          <div class="d-flex  justify-content-start">
+                            <h5 class="m-2"> {{post.title}} </h5>
+                          </div>
+                        </div>
+                        <div class="card-body">
+                          <div class="d-flex justify-content-center">
+                            <img src="/static/path/to/the/uploads/{{post.imgpath}}" alt="{{post.imgpath}}" width="200"
+                              height="200" />
+                          </div>
+                        </div>
+                        <a href="/post/{{user.user}}/{{post.id}}" class="stretched-link"></a>
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+</section>
+<script>
+   function reloadpage(){
+        window.location.reload();
+    }
+    function unfollow(id){
+    console.log(id)
+    fetch('http://127.0.0.1:5000/unfollow',{
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        id:id
+      })
+    }).then(res => {console.log(res)
+    
+    reloadpage()})
+}
+  function follow(id){
+    console.log(id)
+    fetch('http://127.0.0.1:5000/follow',{
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        id:id
+      })
+    }).then(res => {console.log(res)
+    reloadpage()
+    })
+  }
+</script>
+{% endblock %}
