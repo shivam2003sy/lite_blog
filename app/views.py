@@ -14,6 +14,10 @@ from app.forms import LoginForm, RegisterForm
 from app.util import allowed_file
 
 
+#  
+from app.util import token_required
+
+
 # provide login manager with load_user callback
 @lm.user_loader
 def load_user(user_id):
@@ -51,8 +55,7 @@ def register():
             user.save()
             newprofile = Userprofile(user_id =user.id , no_of_posts=0 , no_of_followers=0 , no_of_following=0)
             newprofile.save()
-            # msg = 'User created, please <a href="' + \
-            #     url_for('login') + '">login</a>'
+            
             success = True
             return redirect(url_for('login'))
     else:
@@ -113,7 +116,6 @@ def index():
         like_list = []
         for i in likes:
             like_list.append(i.post_id)
-        
         return render_template('index.html',user=current_user,all_users=display,users=users ,like_list=like_list)
 
 @app.route('/create', methods=['GET', 'POST'])
@@ -137,6 +139,9 @@ def create():
             
             app.logger.info("-----------------------------------------------------" )
             post = Post(title=title, caption=content, user_id=current_user.id, imgpath=filename , timestamp= datetime.datetime.now())
+            user = Userprofile.query.filter_by(user_id=current_user.id).first()
+            user.no_of_posts = user.no_of_posts + 1
+            user.save()
             post.save()
             return redirect(url_for('index'))
         else:
@@ -349,3 +354,8 @@ def comment():
 @app.route('/deletecomment' , methods = ["GET"])
 def deletecomment():
     return {"message": "comment deleted sucessfully "}
+
+
+
+
+

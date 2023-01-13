@@ -6,7 +6,6 @@ from flask import current_app
 from app import ALLOWED_EXTENSIONS, app
 from app.models import *
 
-
 def token_required(f):
     wraps(f)
     def decorated(*args, **kwargs):
@@ -38,8 +37,6 @@ def token_required(f):
             }, 500
         return f(current_user, *args, **kwargs)
     return decorated
-
-
 
 def allowed_file(filename):
     return '.' in filename and \

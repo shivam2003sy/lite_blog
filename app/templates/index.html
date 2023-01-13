@@ -9,12 +9,12 @@
         <div class="card mb-3">
           <!--center column  -->
           {% for user in users %}
-          {% for post in user.userprofile.post %}
+          {% for post in user.userprofile.post | sort(attribute='timestamp',reverse = True) %}
           <div class= "card">
           <div class="card-header mt-3">
             <img src="/static/img/logo.png" class="mr-2" style="width: 35px; height: 35px; border-radius: 50%" />
             <span class="postuserfont"><strong><a href="/profile/{{user.user}}">{{user.user}}</a></strong></span>
-            <span class="float-right mt-2"><strong><i class="fas fa-ellipsis-h"></i></strong></span>
+            <span class="float-right mt-2"><strong><i class="fas fa-ellipsis-h"></i> {{post.title}}</strong></span>
           </div>
           <a href="/post/{{user.user}}/{{post.id}}">
           <img src="/static/path/to/the/uploads/{{post.imgpath}}" class="card-img-top img-fluid " alt="..." />
@@ -49,7 +49,7 @@
           <div class="card-body" style="margin-top: -15px">
             <a href="#" style="text-decoration: none">
               <p class="card-text postuserfont">
-                <strong style="margin-left: -4px; margin-right: 5px">user</strong>{{comment.comment}}
+                <strong style="margin-left: -4px; margin-right: 5px">{{comment.Userprofile.User.user}} : </strong>{{comment.comment}}
               </p>
             </a>
           </div>
@@ -59,7 +59,7 @@
               <div class="col-12 col
               -sm-12 col-md-12 col-lg-12 col-xl-12">
                 <div class="input-group">
-                  <input type="text" class="form-control" placeholder="Add a comment..." id="myText">
+                  <input type="text" class="form-control" placeholder="Add a comment..."  id="myText"{{post.id}} >
                   <div class="input-group-append">
                     <button class="btn btn-outline-secondary" type="button"  onclick="addComment('{{post.id}}')">Post</button>
                   </div>
@@ -225,7 +225,7 @@ function addComment(id){
       })
     }).then(res => {console.log(res)}
     )
-    reloadpage()
+    // reloadpage()
   }
   </script>
   {% endblock content %}

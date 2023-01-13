@@ -27,7 +27,11 @@ class User(UserMixin, db.Model):
                               lazy='dynamic',
                               cascade='all, delete-orphan')
     def get_by_id(self, id):
-        return User.query.filter_by(public_id=id).first()
+        return User.query.filter_by(id=id).first()
+    def get_by_username(self, username):
+        return User.query.filter_by(user=username).first()
+    def get_all(self):
+        return User.query.all()
     def __repr__(self):
         return str(self.id) + ' - ' + str(self.user)
     def save(self):
@@ -56,6 +60,10 @@ class User(UserMixin, db.Model):
         if user and user.verify_password(password):
             return user.to_json()
         return None
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+        return self
 class Userprofile(db.Model):
     id=db.Column(db.Integer,primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), unique=True , nullable=False)
@@ -63,6 +71,7 @@ class Userprofile(db.Model):
     no_of_followers = db.Column(db.Integer)
     no_of_following = db.Column(db.Integer)
     image  = db.Column(db.BLOB)
+    
     post = db.relationship('Post' , backref='Userprofile', lazy=True)
     post_likes = db.relationship('Postlikes' , backref='Userprofile', lazy=True)
     comments = db.relationship('Comments' , backref='Userprofile', lazy=True)
@@ -72,6 +81,18 @@ class Userprofile(db.Model):
         db.session.add( self )
         db.session.commit()
         return self
+    def save(self):
+        db.session.add( self )
+        db.session.commit()
+        return self
+    def to_json(self):
+        json_user = {
+            'user_id': self.user_id,
+            'no_of_posts': self.no_of_posts,
+            'no_of_followers': self.no_of_followers,
+            'no_of_following': self.no_of_following,
+        }
+        return json_user
 class Post(db.Model):
     id = db.Column(db.Integer , primary_key=True)
     title = db.Column(db.String(100))
@@ -83,11 +104,28 @@ class Post(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('userprofile.id'))
     post_likes = db.relationship('Postlikes' , backref='Post', lazy=True )
     comments = db.relationship('Comments' , backref='Post', lazy=True )
-    user = db.relationship('Userprofile' , backref='Post', lazy=True )
+    # user = db.relationship('Userprofile' , backref='Post', lazy=True )
     def __repr__(self):
         return str(self.id) + ' - ' + str(self.title)
     def save(self):
         db.session.add( self )
+        db.session.commit()
+        return self
+    def get_by_id(self, id):
+        return Post.query.filter_by(id=id).first()
+    def to_json(self):
+        json_user = {
+            'id': self.id,
+            'title': self.title,
+            'caption': self.caption,
+            'imgpath': self.imgpath,
+            'timestamp': self.timestamp,
+            'no_of_likes': self.no_of_likes,
+            # 'user_id': self.user_id,
+        }
+        return json_user
+    def delete(self):
+        db.session.delete(self)
         db.session.commit()
         return self
 class Postlikes(db.Model):
@@ -96,6 +134,20 @@ class Postlikes(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('userprofile.id'), nullable=False)
     def __repr__(self):
         return str(self.id) + ' - ' + str(self.post_id) + ' - ' + str(self.user_id)
+    def to_json(self):
+        user = User.query.filter_by(id=self.user_id).first()
+        json_user = {
+            'id': self.id,
+            'post_id': self.post_id,
+            'user name ':user.user,
+            'user_id': self.user_id
+        }
+        return json_user
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+        return self
+    
 class Comments(db.Model):
     id = db.Column(db.Integer , primary_key=True)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
@@ -104,5 +156,19 @@ class Comments(db.Model):
     timestamp = db.Column(db.DateTime)
     def __repr__(self):
         return str(self.id) + ' - ' + str(self.post_id) + ' - ' + str(self.user_id) + ' - ' + str(self.comment)
-
+    def to_json(self):
+        user = User.query.filter_by(id=self.user_id).first()
+        json_user = {
+            'id': self.id,
+            'post_id': self.post_id,
+            'user name ':user.user,
+            'user_id': self.user_id,
+            'comment': self.comment,
+            'timestamp': self.timestamp,
+        }
+        return json_user
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+        return self
 # https://www.youtube.com/watch?v=jYGcJ8wBVNs&list=PLZ2ps__7DhBaavCDmD5YWSo9QnY_mpTpY&index=13
