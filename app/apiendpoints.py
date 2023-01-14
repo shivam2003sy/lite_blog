@@ -12,7 +12,7 @@ from app.models import User , Userprofile , Post , Postlikes , Comments
 import os
 
 
-#  new user created 
+#  new user created  sucess
 @app.route("/api/users/create", methods=["POST"])
 def create_user():
     data = request.get_json()
@@ -44,7 +44,7 @@ def create_user():
     }, 201 
 
 
-# login user 
+# login user  sucess
 @app.route("/api/users/login", methods=["POST"])
 def login_api():
     try:
@@ -89,7 +89,7 @@ def login_api():
         }, 500
 
 
-#  delete User 
+#  delete User  sucess
 @app.route("/api/users", methods=["DELETE"])
 @token_required
 def delete_user(current_user):
@@ -119,7 +119,7 @@ def delete_user(current_user):
 
 #  get userprofile 
 
-#  read user and userProfile
+#  read user and userProfile sucess
 @app.route("/api/user", methods=["GET"] , endpoint="get_user")
 @token_required
 def get_user(current_user):
@@ -143,7 +143,7 @@ def get_user(current_user):
 
 
 
-# update userprofile
+# update userprofile sucess
 @app.route("/api/user", methods=["PUT"] , endpoint="update_user")
 @token_required
 def update_user(current_user):
@@ -181,7 +181,7 @@ def update_user(current_user):
         }, 500
 
 
-# read Posts
+# read Posts sucess
 @app.route("/api/posts", methods=["GET"] , endpoint="get_posts")
 @token_required
 def get_posts(current_user):
@@ -202,18 +202,15 @@ def get_posts(current_user):
         "error": "Not Found"
     }, 404
 
-#single post 
+#single post  sucess
 @app.route("/api/posts/<int:post_id>", methods=["GET"] , endpoint="get_post")
 @token_required
 def get_post(current_user , post_id):
-    user=User.query.filter_by(id=current_user.id).first()
-    if user:
-        post  = Post.query.filter_by(id=post_id).first()
-        if post:
-            postcomment = Comments.query.filter_by(post_id=post_id).all()
-            postliked = Postlikes.query.filter_by(post_id=post_id).all()
-            if postliked:
-                return {
+    post  = Post.query.filter_by(id=post_id).first()
+    if post:
+        postcomment = Comments.query.filter_by(post_id=post_id).all()
+        postliked = Postlikes.query.filter_by(post_id=post_id).all()
+        return {
                     "message": "Post fetched successfully!",
                     "data": {
                         "post": post.to_json(),
@@ -222,20 +219,14 @@ def get_post(current_user , post_id):
                     },
                     "error": None
                 }, 200
-        else:
-            return{
+    return{
                 "message": "Post not found!",
                 "data": None,
                 "error": "Not Found"
 
             }
-    return {
-        "message": "User not found!",
-        "data": None,
-        "error": "Not Found"
-    }, 404
 
-# # create post
+# # create post sucess
 @app.route("/api/posts", methods=["POST"] , endpoint="create_post")
 @token_required
 def create_post(current_user):
@@ -273,26 +264,18 @@ def create_post(current_user):
             "error": None
         }, 201
 
-# update post
+# update post  sucess
 @app.route("/api/posts/<int:post_id>", methods=["PUT"] , endpoint="update_post")
 @token_required
 def update_post(current_user , post_id):
     post  = Post.query.filter_by(id = post_id).first()
     app.logger.info("update post")
-    app.logger.info(title)
-    file = request.files['file']
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        app.logger.info("-----------------" + filename)
     if request.form['title']:
         title = request.form['title']
         post.title = title
-    if request.form['title']:
+    if request.form['description']:
         description = request.form['description']
         post.caption = description
-    if filename :
-        post.imgpath = filename
     post.timestamp = datetime.now()
     user = User().get_by_id(current_user.id)
     if user:
@@ -306,7 +289,7 @@ def update_post(current_user , post_id):
             "error": None
         }, 201
 
-# delete post
+# delete post sucess
 @app.route("/api/posts/<int:post_id>", methods=["DELETE"] , endpoint="delete_post")
 @token_required
 def delete_post(current_user , post_id):
@@ -342,7 +325,7 @@ def delete_post(current_user , post_id):
         }, 500
 
 
-# # like post
+# like post
 @app.route("/api/posts/<int:post_id>/like", methods=["POST"] , endpoint="like_post")
 @token_required
 def like_post(current_user , post_id):
@@ -354,7 +337,6 @@ def like_post(current_user , post_id):
                 postlike = Postlikes(
                     user_id = user.id,
                     post_id = post.id,
-                    timestamp = datetime.datetime.now()
                 )
                 postlike.save()
                 return {
@@ -374,7 +356,7 @@ def like_post(current_user , post_id):
             "data": None
         }, 500
 
-# unlike post
+# unlike post sucessa
 @app.route("/api/posts/<int:post_id>/unlike", methods=["POST"] , endpoint="unlike_post")
 @token_required
 def unlike_post(current_user , post_id):
@@ -403,7 +385,7 @@ def unlike_post(current_user , post_id):
             "data": None
         }, 500
 
-# comment on post
+# comment on post sucess
 @app.route("/api/posts/<int:post_id>/comment", methods=["POST"] , endpoint="comment_post")
 @token_required
 def comment_post(current_user , post_id):
@@ -423,7 +405,7 @@ def comment_post(current_user , post_id):
                     user_id = user.id,
                     post_id = post.id,
                     comment = data.get("comment"),
-                    timestamp = datetime.datetime.now()
+                    timestamp = datetime.now()
                 )
                 comment.save()
                 return {
@@ -443,7 +425,7 @@ def comment_post(current_user , post_id):
             "data": None
         }, 500
 
-# delete comment
+# delete comment sucess
 @app.route("/api/posts/<int:post_id>/comment/<int:comment_id>", methods=["DELETE"] , endpoint="delete_comment")
 @token_required
 def delete_comment(current_user , post_id , comment_id):
@@ -472,7 +454,7 @@ def delete_comment(current_user , post_id , comment_id):
             "data": None
         }, 500
 
-# get all comments
+# get all comments sucess
 @app.route("/api/posts/<int:post_id>/comments", methods=["GET"] , endpoint="get_comments")
 @token_required
 def get_comments(current_user , post_id):
@@ -506,7 +488,7 @@ def get_comments(current_user , post_id):
         }, 500
 
 
-# get all likes
+# get all likes  sucess
 @app.route("/api/posts/<int:post_id>/likes", methods=["GET"] , endpoint="get_likes")
 @token_required
 def get_likes(current_user , post_id):
@@ -541,7 +523,7 @@ def get_likes(current_user , post_id):
 
 
 
-# update comment
+# update comment sucess
 @app.route("/api/posts/<int:post_id>/comment/<int:comment_id>", methods=["PUT"] , endpoint="update_comment")
 @token_required
 def update_comment(current_user , post_id , comment_id):

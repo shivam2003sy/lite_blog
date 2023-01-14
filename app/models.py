@@ -153,7 +153,11 @@ class Postlikes(db.Model):
         db.session.delete(self)
         db.session.commit()
         return self
-    
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+        return self
+
 class Comments(db.Model):
     id = db.Column(db.Integer , primary_key=True)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
@@ -177,4 +181,7 @@ class Comments(db.Model):
         db.session.delete(self)
         db.session.commit()
         return self
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
 # https://www.youtube.com/watch?v=jYGcJ8wBVNs&list=PLZ2ps__7DhBaavCDmD5YWSo9QnY_mpTpY&index=13
