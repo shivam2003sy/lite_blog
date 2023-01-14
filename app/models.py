@@ -80,10 +80,7 @@ class Userprofile(db.Model):
         db.session.add( self )
         db.session.commit()
         return self
-    def save(self):
-        db.session.add( self )
-        db.session.commit()
-        return self
+    
     def to_json(self):
         json_user = {
             'user_id': self.user_id,
@@ -96,7 +93,7 @@ class Userprofile(db.Model):
         db.session.delete(self)
         db.session.commit()
         return self
-    def get_by_id(id):
+    def get_by_id(self , id):
         return Userprofile.query.filter_by(id=id).first()
 
 class Post(db.Model):

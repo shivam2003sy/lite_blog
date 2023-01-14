@@ -222,8 +222,15 @@ def get_post(current_user , post_id):
                     },
                     "error": None
                 }, 200
+        else:
+            return{
+                "message": "Post not found!",
+                "data": None,
+                "error": "Not Found"
+
+            }
     return {
-        "message": "Post not found!",
+        "message": "User not found!",
         "data": None,
         "error": "Not Found"
     }, 404
@@ -233,88 +240,71 @@ def get_post(current_user , post_id):
 @token_required
 def create_post(current_user):
     app.logger.info("create post")
-    try:
-        data = request.get_json()
-        app.logger.info(data['title'])
-        file = request.files['file']
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            app.logger.info("-----------------" + filename)
-        if not data:
-            return {
-                "message": "Please provide post details",
-                "data": None,
-                "error": "Bad request"
-            }, 400
-        user = User().get_by_id(current_user.id)
-        if user:
-            post = Post(
-                user_id = user.id,
-                title = data.get("title"),
-                caption = data.get("description"),
-                imgpath= filename,
-                timestamp= datetime.datetime.now()
-            )
-            user = User().get_by_id(current_user.id)
-            user.no_of_posts = user.no_of_posts + 1
-            user.save()
-            post.save()
-            return {
-                "message": "Post created successfully!",
-                "data": post.to_json(),
-                "error": None
-            }, 201
-    except Exception as e:
+    title = request.form['title']
+    description = request.form['description']
+    app.logger.info(title)
+    file = request.files['file']
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        app.logger.info("-----------------" + filename)
+    if not title:
         return {
-            "message": "Something went wrong!",
-            "error": str(e),
-            "data": None
-        }, 500
+            "message": "Please provide post details",
+            "data": None,
+            "error": "Bad request"
+        }, 400
+    user = User().get_by_id(current_user.id)
+    if user:
+        post = Post(
+            user_id = user.id,
+            title = title,
+            caption = description,
+            imgpath= filename,
+            timestamp= datetime.now()
+        )
+        user = Userprofile().get_by_id(current_user.id)
+        user.no_of_posts = user.no_of_posts + 1
+        user.save()
+        post.save()
+        return {
+            "message": "Post created successfully!",
+            "data": post.to_json(),
+            "error": None
+        }, 201
 
 # update post
-# @app.route("/api/posts/<int:post_id>", methods=["PUT"] , endpoint="update_post")
-# @token_required
-# def update_post(current_user , post_id):
-#     try:
-#         data = request.get_json()
-#         if not data:
-#             return {
-#                 "message": "Please provide post details",
-#                 "data": None,
-#                 "error": "Bad request"
-#             }, 400
-#         user = User().get_by_id(current_user.id)
-#         if user:
-#             post = Post().get_by_id(post_id)
-#             if post:
-#                 title = data.get("title")
-#                 description = data.get("description")
-#                 image = data.get("image")
-                
-#                 if title:
-#                     post.title = title
-#                 if description:
-#                     post.description = description
-#                 if image:
-#                     post.image = image
-#                 post.save()
-#                 return {
-#                     "message": "Post updated successfully!",
-#                     "data": post.to_json(),
-#                     "error": None
-#                 }, 200
-#         return {
-#             "message": "Post not found!",
-#             "data": None,
-#             "error": "Not Found"
-#         }, 404
-#     except Exception as e:
-#         return {
-#             "message": "Something went wrong!",
-#             "error": str(e),
-#             "data": None
-#         }, 500
+@app.route("/api/posts/<int:post_id>", methods=["PUT"] , endpoint="update_post")
+@token_required
+def update_post(current_user , post_id):
+    post  = Post.query.filter_by(id = post_id).first()
+    app.logger.info("update post")
+    app.logger.info(title)
+    file = request.files['file']
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        app.logger.info("-----------------" + filename)
+    if request.form['title']:
+        title = request.form['title']
+        post.title = title
+    if request.form['title']:
+        description = request.form['description']
+        post.caption = description
+    if filename :
+        post.imgpath = filename
+    post.timestamp = datetime.now()
+    user = User().get_by_id(current_user.id)
+    if user:
+        post.save()
+        user = Userprofile().get_by_id(current_user.id)
+        user.no_of_posts = user.no_of_posts + 1
+        user.save()
+        return {
+            "message": "Post updated successfully!",
+            "data": post.to_json(),
+            "error": None
+        }, 201
 
 # delete post
 @app.route("/api/posts/<int:post_id>", methods=["DELETE"] , endpoint="delete_post")

@@ -1,7 +1,7 @@
-# kanban web  app 
+# Blog Lite web  app 
 # Modern application Development 1 Graded Project
 
-A kanban web app is one of the tools that can be used  to manage work at a personal or organizational level.
+
 
 Ways to use :  
 API for CRUD On List and Cards of tasks 
@@ -35,8 +35,7 @@ $ flask run
 ## Flask Application Structure
 ```
 .
-|──────kanban/
-| |────.env
+|──────LITE_BLOG/
 | |────.gitignore
 | |────requiurements.txt
 | |──────run.py
@@ -53,25 +52,38 @@ $ flask run
 | | | |──────────────page-403.html
 | | | |──────────────page-404.html
 | | | |──────────────page500.html
-| | | |──────────────summary/
-| | | | |────────────main.py
+| | | |──────────────post/
+| | | | |────────────editpost.html
+| | | | |────────────post.html
 | | | |─────────────layouts/
-| | | | |──────────────base.html
+| | | | |──────────────base-all.html
 | | | | |──────────────base-home.html
 | | | |──────────────includes
 | | | | |──────────────footer.html
-| | | | |──────────────navigation.html
+| | | | |──────────────navigation-all.html
 | | | | |──────────────naviagation-home.html
-| | | |──────────────create/
-| | | | |──────────────createlist.html
-| | | | |──────────────editlist.html
-| | | |──────────────card
-| | | | |──────────────createcard.hmtl
-| | | | |──────────────editcard.html
 | | | |──────────────accounts
 | | | | |──────────────login
 | | | | |──────────────register
+| | |────────────────profile/
+| | | |──────────────edit_profile.html
+| | | |──────────────followers.html
+| | | |──────────────following.html
+| | | |──────────────profile.html
+| | |────────────────search/
+| | | |──────────────search.html
 | | | |──────────────static/
+| | | | |──────────────css/
+| | | | |──────────────img/
+| | | | |   |──────────────path/
+| | | | | |  |   |──────────────to/
+| | | | |           |──────────────the/
+| | | | |               |──────────────uplaod/
+
+
+
+
+
 
 ```
 

@@ -371,7 +371,7 @@ def post(user,id):
 # Show the chart
         plt.savefig(os.path.join(app.config['UPLOAD_FOLDER'],"plot"+id+".png"))
         image_path = 'plot{}.png'.format(id)
-        return render_template('post/post.html', post=post , user=user , like_list = like_list , image_path= image_path  ,current_user = current_user)
+        return render_template('post/post.html', post=post , user=user , like_list = like_list , image_path= image_path  ,current_user = current_user , comment = comment)
 
 
 
