@@ -1,0 +1,30 @@
+{% extends "layouts/base-all.html" %}
+{% block title %} Board {% endblock %}
+{% block content %}
+<!-- Main content -->
+<section>
+    
+<!-- Modal -->
+<div >
+    <div class="row justify-content-center">
+      <div class = "card" style="width: 50rem;">
+        <div >
+          <h1 class="card-header">Update Blog</h1>
+        </div>
+        <div class="card-body">
+          <form action="/edit/{{post.id}}" method="POST" enctype="multipart/form-data">
+            <div class="mb-3">
+              <label for="exampleFormControlInput1" class="form-label">Title</label>
+              <input type="text" class="form-control" id="exampleFormControlInput1" name="title" placeholder="Title" value ={{post.title}}>
+            </div>
+            <div class="mb-3">
+              <label for="exampleFormControlTextarea1" class="form-label">Description</label>
+              <textarea class="form-control" id="exampleFormControlTextarea1" name="description" rows="12" value = {{post.caption}}></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Update</button> 
+        </div>
+      </div>
+    </div>
+</section>
+
+{% endblock %}

@@ -71,7 +71,6 @@ class Userprofile(db.Model):
     no_of_followers = db.Column(db.Integer)
     no_of_following = db.Column(db.Integer)
     image  = db.Column(db.BLOB)
-    
     post = db.relationship('Post' , backref='Userprofile', lazy=True)
     post_likes = db.relationship('Postlikes' , backref='Userprofile', lazy=True)
     comments = db.relationship('Comments' , backref='Userprofile', lazy=True)
@@ -93,6 +92,13 @@ class Userprofile(db.Model):
             'no_of_following': self.no_of_following,
         }
         return json_user
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+        return self
+    def get_by_id(id):
+        return Userprofile.query.filter_by(id=id).first()
+
 class Post(db.Model):
     id = db.Column(db.Integer , primary_key=True)
     title = db.Column(db.String(100))
@@ -124,6 +130,9 @@ class Post(db.Model):
             # 'user_id': self.user_id,
         }
         return json_user
+    
+
+    
     def delete(self):
         db.session.delete(self)
         db.session.commit()

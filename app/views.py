@@ -1,20 +1,17 @@
 # Python modules
-
 import os
 import datetime
-
+import matplotlib.pyplot as plt
+plt.switch_backend('agg')
 # Flask modules
-from flask import render_template, request, url_for, redirect, send_from_directory,flash
+from flask import render_template, request, url_for, redirect, send_from_directory,flash  ,jsonify
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
 # App modules
 from app import app, lm, db, bc, api
 from app.models import User ,Userprofile, Post ,Follow ,Postlikes , Comments
 from app.forms import LoginForm, RegisterForm 
-from app.util import allowed_file
-
-
-#  
+from app.util import allowed_file  , delete_image
 from app.util import token_required
 
 
@@ -90,6 +87,8 @@ def login():
             msg = "No user registerd with this usename "
     return render_template('accounts/login.html', form=form, msg=msg)
 
+
+
 # App main route + generic routing
 @app.route('/')
 def index():
@@ -117,6 +116,8 @@ def index():
         for i in likes:
             like_list.append(i.post_id)
         return render_template('index.html',user=current_user,all_users=display,users=users ,like_list=like_list)
+
+
 
 @app.route('/create', methods=['GET', 'POST'])
 def create():
@@ -147,6 +148,29 @@ def create():
         else:
             return render_template('page-403.html')
 
+@app.route('/edit/<int:post_id>', methods=['GET', 'POST'])
+def editpost(post_id):
+    if not current_user.is_authenticated:
+            return redirect(url_for('login'))
+    else:
+            oldpost  = Post.query.filter_by(id=post_id).first()
+            if request.method == 'POST':
+                oldpost  = Post.query.filter_by(id=post_id).first()
+                title = request.form.get('title', '', type=str)
+                content = request.form.get('description', '', type=str)               
+                if title:
+                    oldpost.title = title
+                if content:
+                    oldpost.caption = content
+                oldpost.timestamp= datetime.datetime.now()
+                oldpost.save()
+                return redirect(url_for('index'))
+            else:
+                return render_template('post/editpost.html', post = oldpost)
+
+
+
+
 
 @app.route('/profile/<username>')
 def profile(username):
@@ -168,20 +192,25 @@ def profile(username):
             y =following[i].followed_id
             unfollow.append(y)
         return render_template('profile/profile.html', user=user, posts=posts , unfollow=unfollow , follow_back=follow_back )
-        
-# @app.route('/profile/<username>/edit', methods=['GET', 'POST'])
-# def edit_profile(username):
-#     if not current_user.is_authenticated:
-#         return redirect(url_for('login'))
-#     else:
-#         user = User.query.filter_by(user=username).first_or_404()
-#         if request.method == 'POST':
-#             user.user = request.form.get('username', '', type=str)
-#             user.email = request.form.get('email', '', type=str)
-#             user.save()
-#             return redirect(url_for('profile', username=user.user))
-#         else:
-#             return render_template('profile/edit_profile.html', user=user)
+
+@app.route('/profile/<username>/edit', methods=['GET', 'POST'])
+def edit_profile(username):
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+    else:
+        user = User.query.filter_by(user=username).first_or_404()
+        if request.method == 'POST':
+            name  = request.form.get('username', '', type=str)
+            email = request.form.get('email', '', type=str)
+            if name:
+                user.user = name
+            if email:
+                user.email = email 
+            user.save()
+            return redirect(url_for('index'))
+        else:
+            return render_template('profile/edit_profile.html', user=user)
+
 
 @app.route('/myprofile')
 def myprofile():
@@ -193,16 +222,36 @@ def myprofile():
         return render_template('profile/myprofile.html', user=user, posts=posts)
 
 
+# delete user
 
-from flask import jsonify
-@app.route('/search', methods=['GET'])
-def search():
-    l = []
-    user = User.query.all()
-    for i in user:
-        l.append(i.user)
-    return jsonify(l)
-        
+@app.route("/user", methods=["DELETE"] , endpoint="deleteuser")
+def deleteuser():
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+    else:
+        user = User().get_by_id(current_user.id)
+        userdetails= Userprofile.get_by_id(current_user.id)
+        if userdetails:
+            userdetails.delete()
+        user.delete()
+        # post  =  post.query.filter_by(user_id =current_user.id ).all()
+        # for i in post:
+        #     i.delete()
+        return {
+                    "message": "User  deleted successfully!",
+                    "data": None,
+                    "error": None
+                }, 200
+
+
+
+
+
+
+
+
+
+
 
 @app.route('/follow'  ,methods= ["POST"])
 def follow():
@@ -226,6 +275,9 @@ def follow():
         db.session.add(follower_user)
         db.session.commit()
         return {"message": "followed sucessfully "}
+
+
+
 @app.route("/unfollow" ,methods= ["POST"])
 def unfollow():
     if not current_user.is_authenticated:
@@ -249,6 +301,8 @@ def unfollow():
         db.session.commit()
         return {"message": "unfollowed sucessfully "}
 
+
+
 @app.route('/followings' , methods = ['get'])
 def followings():
     if not current_user.is_authenticated:
@@ -261,6 +315,8 @@ def followings():
             user  = User.query.filter_by(id = i.followed_id).first_or_404()
             following_list.append(user)
         return render_template('profile/followings.html' , following_list = following_list , user = current_user)
+
+
 
 @app.route('/followers' , methods = ['get'])
 def followers():
@@ -291,9 +347,32 @@ def post(user,id):
     if not current_user.is_authenticated:
         return redirect(url_for('login'))
     else:
+        image_path = os.path.join(app.config['UPLOAD_FOLDER'],"plot"+id+".png")
+        if os.path.exists(image_path):
+            os.remove(image_path)
+            app.logger.info("------------------------------image ----------------deleete -------------")
+        app.logger.warning(os.path.join(app.config['UPLOAD_FOLDER'],"plot"+id+".png"))
         user = User.query.filter_by(user=user).first_or_404()
         post = Post.query.filter_by(id=id).first_or_404()
-        return render_template('post/post.html', post=post , user=user)
+        likes  =  Postlikes.query.filter_by(user_id = user.id).all()
+        comment  = Comments.query.filter_by(post_id= post.id).all()
+        like_list = []
+        for i in likes:
+            like_list.append(i.post_id)
+        no_of_comment = len(comment)
+        no_of_likes = post.no_of_likes
+        plt.bar(1, no_of_comment, label='Comments')
+        plt.bar(2, no_of_likes, label='Likes')
+
+# Add labels and a legend
+        plt.ylabel('Count')
+        plt.xticks([], [])
+        # plt.legend()
+# Show the chart
+        plt.savefig(os.path.join(app.config['UPLOAD_FOLDER'],"plot"+id+".png"))
+        image_path = 'plot{}.png'.format(id)
+        return render_template('post/post.html', post=post , user=user , like_list = like_list , image_path= image_path  ,current_user = current_user)
+
 
 
 @app.route("/like" , methods = ["POST"])
@@ -319,6 +398,7 @@ def like():
 
 
 
+
 @app.route("/unlike" , methods = ["POST"])
 def unlike():
     if not current_user.is_authenticated:
@@ -333,6 +413,7 @@ def unlike():
         db.session.delete(like)
         db.session.commit()
         return {"message": "unliked sucessfully "}
+
 
 @app.route('/comment' , methods = ["POST"])
 def comment():
@@ -354,6 +435,53 @@ def comment():
 @app.route('/deletecomment' , methods = ["GET"])
 def deletecomment():
     return {"message": "comment deleted sucessfully "}
+
+
+
+
+
+
+
+# delete post
+@app.route("/posts/<int:post_id>", methods=["DELETE"] , endpoint="deletepost")
+def deletepost(post_id):
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+    else:
+        user = User().get_by_id(current_user.id)
+        if user:
+            post = Post().get_by_id(post_id)
+            if post:
+                postlikes = Postlikes.query.filter_by(post_id=post_id).all()
+                if postlikes:
+                    for postlike in postlikes:
+                        postlike.delete()
+                comments = Comments.query.filter_by(post_id=post_id).all()
+                if comments:
+                    for comment in comments:
+                        comment.delete() 
+                post.delete()
+                userprofile = Userprofile.query.filter_by(id = user.id)
+                userprofile.no_of_posts -=1
+                userprofile.save()
+                return {
+                    "message": "Post deleted successfully!",
+                    "data": None,
+                    "error": None
+                }, 200
+        return {
+            "message": "Post not found!",
+            "data": None,
+            "error": "Not Found"
+        }, 404
+    
+
+
+@app.route('/search', methods=['POST'])
+def search():
+    query = request.json['query']
+    users = User.query.filter(User.user.contains(query)).all()
+    return jsonify([user.user for user in users])
 
 
 

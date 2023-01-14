@@ -34,14 +34,14 @@
             </li>
             {% endif %}
             <!-- comment button  -->
-            <li class="nav-item">
+            <!-- <li class="nav-item">
               <a class="nav-link" href="#comment"><i class="far fa-comment fa-lg" style="
               color: black;
               position: relative;
               font-size: 23px;
               margin-left: -11px;
           "></i></a>
-            </li>
+            </li> -->
           </ul>
           <span class="postuserfont m-2"><strong>Total likes : {{post.no_of_likes}}</strong></span>
           </span>
@@ -59,7 +59,7 @@
               <div class="col-12 col
               -sm-12 col-md-12 col-lg-12 col-xl-12">
                 <div class="input-group">
-                  <input type="text" class="form-control" placeholder="Add a comment..."  id="myText"{{post.id}} >
+                  <input type="text" class="form-control" placeholder="Add a comment..."  id="myText">
                   <div class="input-group-append">
                     <button class="btn btn-outline-secondary" type="button"  onclick="addComment('{{post.id}}')">Post</button>
                   </div>
@@ -166,19 +166,18 @@
     </div>
   </div>
   <script>
-    const input = document.querySelector('input');
-    const log = document.getElementById('log');
-    input.addEventListener('beforeinput', updateValue);
-    function updateValue(e) {
-      let data = fetch("http://127.0.0.1:5000/search").
-        then((res) => res.json()).
-        then((data) => {
-          user = data
-        })
-      console.log(user)
-    }
+    // const input = document.querySelector('input');
+    // const log = document.getElementById('log');
+    // input.addEventListener('beforeinput', updateValue);
+    // function updateValue(e) {
+    //   let data = fetch("http://127.0.0.1:5000/search").
+    //     then((res) => res.json()).
+    //     then((data) => {
+    //       user = data
+    //     })
+    //   console.log(user)
+    // }
   
-
 function reloadpage(){
   window.location.reload();
     }
@@ -210,10 +209,15 @@ function unlike(id){
     
     reloadpage()})
 }
+
 function addComment(id){
     console.log(id)
-    var x = document.getElementById("myText").value;
-    console.log(x)
+    var elements = document.querySelectorAll("[id='myText']");
+    // console.log(elements)
+    var inputValue = Array.prototype.find.call(elements, function(element){
+    return element.value !== "";
+});
+console.log(inputValue.value);
     fetch('http://127.0.0.1:5000/comment',{
       method: 'POST',
       headers: {
@@ -221,11 +225,11 @@ function addComment(id){
       },
       body: JSON.stringify({
         id:id,
-        comment:x
+        comment:inputValue.value
       })
     }).then(res => {console.log(res)}
     )
-    // reloadpage()
+    reloadpage()
   }
   </script>
   {% endblock content %}

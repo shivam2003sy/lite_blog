@@ -1,7 +1,6 @@
 from logging import Logger
 from app import app , api 
 from app.models import User
-
 from flask import request, jsonify
 import jwt
 from datetime import datetime 
@@ -11,6 +10,7 @@ from werkzeug.utils import secure_filename
 from app.util import allowed_file
 from app.models import User , Userprofile , Post , Postlikes , Comments
 import os
+
 
 #  new user created 
 @app.route("/api/users/create", methods=["POST"])
@@ -515,6 +515,7 @@ def get_comments(current_user , post_id):
             "data": None
         }, 500
 
+
 # get all likes
 @app.route("/api/posts/<int:post_id>/likes", methods=["GET"] , endpoint="get_likes")
 @token_required
@@ -547,6 +548,8 @@ def get_likes(current_user , post_id):
             "error": str(e),
             "data": None
         }, 500
+
+
 
 # update comment
 @app.route("/api/posts/<int:post_id>/comment/<int:comment_id>", methods=["PUT"] , endpoint="update_comment")
@@ -585,30 +588,24 @@ def update_comment(current_user , post_id , comment_id):
             "data": None
         }, 500
 
-# search users with string
+
+
+# search users with string 
 @app.route("/api/users/search/<string:search_string>", methods=["GET"] , endpoint="search_users")
-@token_required
-def search_users(current_user , search_string):
+def search_users(search_string):
     try:
-        user = User().get_by_id(current_user.id)
-        if user:
-            users = User.query.filter(User.name.ilike("%"+search_string+"%")).all()
-            if users:
-                return {
+        users = User.query.filter(User.user.ilike("%"+search_string+"%")).all()
+        if users:
+            return {
                     "message": "Users fetched successfully!",
                     "data": [user.to_json() for user in users],
                     "error": None
                 }, 200
-            return {
+        return {
                 "message": "No users found!",
                 "data": None,
                 "error": "Not Found"
             }, 404
-        return {
-            "message": "User not found!",
-            "data": None,
-            "error": "Not Found"
-        }, 404
     except Exception as e:
         return {
             "message": "Something went wrong!",
