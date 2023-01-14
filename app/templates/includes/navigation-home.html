@@ -19,10 +19,7 @@
   </div> -->
 
   <!-- search boc  -->
-  <form id="search-form">
-    <input type="text" id="search-query" placeholder="Search for a user...">
-    <button type="submit"   data-toggle="modal" data-target=".bd-example-modal-lg">Search</button>
-</form>
+  
 
 
   <div class="collapse navbar-collapse ml-5 mt-2 justify-content-end " id="navbarSupportedContent" >
@@ -77,8 +74,21 @@
     })
     .then(function(data) {
         // Handle the search results
-        console.log(data)
-        // ...
+        var searchResults = document.getElementById('search-results');
+        searchResults.innerHTML = "";
+        for (var i = 0; i < data.length; i++) {
+            var p = document.createElement("p");
+            var node = document.createTextNode(data[i]);
+            p.appendChild(node);
+            searchResults.appendChild(p);
+        }
+        // Show the search results modal
+        document.getElementById('search-results-modal').style.display = 'block';
     });
+});
+// script.js
+document.getElementById('close-button').addEventListener('click', function(e) {
+    // hide the modal
+    document.getElementById('search-results-modal').style.display = 'none';
 });
 </script>
