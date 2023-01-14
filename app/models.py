@@ -93,7 +93,7 @@ class Userprofile(db.Model):
         db.session.delete(self)
         db.session.commit()
         return self
-    def get_by_id(self , id):
+    def get_by_id(id):
         return Userprofile.query.filter_by(id=id).first()
 
 class Post(db.Model):
