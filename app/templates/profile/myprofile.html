@@ -107,7 +107,7 @@ function reloadpage(){
     }
     function onDelete(id){
       console.log("delete" +id)
-      fetch('http://127.0.0.1:5000/posts/'+id,{
+      fetch('https://lite-blog.onrender.com/posts/'+id,{
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json'
@@ -118,7 +118,7 @@ function reloadpage(){
     }
 
   function onDeleteUser(){
-    fetch('http://127.0.0.1:5000/user',{
+    fetch('https://lite-blog.onrender.com/user',{
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json'

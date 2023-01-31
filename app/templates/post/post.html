@@ -80,7 +80,7 @@ function reloadpage(){
     }
 function like(id){
     console.log(id)
-    fetch('http://127.0.0.1:5000/like',{
+    fetch('https://lite-blog.onrender.com/like',{
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -94,7 +94,7 @@ function like(id){
 }
 function unlike(id){
     console.log(id)
-    fetch('http://127.0.0.1:5000/unlike',{
+    fetch('https://lite-blog.onrender.com/unlike',{
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -112,7 +112,7 @@ function addComment(id){
     console.log(id)
     var input = document.getElementById("myText").value;
     console.log(input);
-    fetch('http://127.0.0.1:5000/comment',{
+    fetch('https://lite-blog.onrender.com/comment',{
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

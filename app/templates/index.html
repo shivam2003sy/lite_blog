@@ -185,7 +185,7 @@
     // const log = document.getElementById('log');
     // input.addEventListener('beforeinput', updateValue);
     // function updateValue(e) {
-    //   let data = fetch("http://127.0.0.1:5000/search").
+    //   let data = fetch("https://lite-blog.onrender.com/search").
     //     then((res) => res.json()).
     //     then((data) => {
     //       user = data
@@ -198,7 +198,7 @@ function reloadpage(){
     }
 function like(id){
     console.log(id)
-    fetch('http://127.0.0.1:5000/like',{
+    fetch('https://lite-blog.onrender.com/like',{
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -212,7 +212,7 @@ function like(id){
 }
 function unlike(id){
     console.log(id)
-    fetch('http://127.0.0.1:5000/unlike',{
+    fetch('https://lite-blog.onrender.com/unlike',{
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -233,7 +233,7 @@ function addComment(id){
     return element.value !== "";
 });
 console.log(inputValue.value);
-    fetch('http://127.0.0.1:5000/comment',{
+    fetch('https://lite-blog.onrender.com/comment',{
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -271,7 +271,7 @@ console.log(inputValue.value);
         searchResults.innerHTML = "";
         for (var i = 0; i < data.length; i++) {
             var p = document.createElement("a");
-            p.href = "http://127.0.0.1:5000/profile/"+data[i];
+            p.href = "https://lite-blog.onrender.com/profile/"+data[i];
             p.className ="p-4"
             var node = document.createTextNode(data[i]);
             p.appendChild(node);
