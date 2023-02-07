@@ -5,11 +5,12 @@
 <section>
   <div class="container mt-4 middlearea">
     <div class="row">
-      <div class="col-md-3 d-sm-none d-md-block">
+      <div class="col-md-3 d-sm-3 d-md-block">
         <div class="card col-xs-12 rightpanel" id="sticky-sidebar" style="width: 10rem">
       <form id="search-form">
         <input type="text" id="search-query" placeholder="Search for a user...">
-        <button type="submit">Search</button>
+        <div>
+        <button type="submit">Search</button></div>
     </form>
     <div id="search-results-modal" style="display: none;">
         <div class="model" style=" padding: 10px;" id="search-results">
@@ -270,12 +271,14 @@ console.log(inputValue.value);
         var searchResults = document.getElementById('search-results');
         searchResults.innerHTML = "";
         for (var i = 0; i < data.length; i++) {
+          var d = document.createElement("div");
             var p = document.createElement("a");
             p.href = "https://lite-blog.onrender.com/profile/"+data[i];
             p.className ="p-4"
             var node = document.createTextNode(data[i]);
             p.appendChild(node);
-            searchResults.appendChild(p);
+            d.appendChild(p)
+            searchResults.appendChild(d);
         }
         // Show the search results modal
         document.getElementById('search-results-modal').style.display = 'block';
