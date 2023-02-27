@@ -80,7 +80,7 @@ function reloadpage(){
     }
 function like(id){
     console.log(id)
-    fetch('https://lite-blog.onrender.com/like',{
+    fetch('https://liteblog.azurewebsites.net//like',{
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -94,7 +94,7 @@ function like(id){
 }
 function unlike(id){
     console.log(id)
-    fetch('https://lite-blog.onrender.com/unlike',{
+    fetch('https://liteblog.azurewebsites.net//unlike',{
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -112,7 +112,7 @@ function addComment(id){
     console.log(id)
     var input = document.getElementById("myText").value;
     console.log(input);
-    fetch('https://lite-blog.onrender.com/comment',{
+    fetch('https://liteblog.azurewebsites.net//comment',{
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

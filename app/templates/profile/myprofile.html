@@ -107,7 +107,7 @@ function reloadpage(){
     }
     function onDelete(id){
       console.log("delete" +id)
-      fetch('https://lite-blog.onrender.com/posts/'+id,{
+      fetch('https://liteblog.azurewebsites.net//posts/'+id,{
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json'
@@ -118,7 +118,7 @@ function reloadpage(){
     }
 
   function onDeleteUser(){
-    fetch('https://lite-blog.onrender.com/user',{
+    fetch('https://liteblog.azurewebsites.net//user',{
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json'
