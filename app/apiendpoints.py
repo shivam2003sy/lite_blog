@@ -96,6 +96,10 @@ def delete_user(current_user):
     try:
         user = User().get_by_id(current_user.id)
         if user:
+            userprofile = Userprofile.query.filter_by(user_id=current_user.id).first()
+            if userprofile:
+                userprofile.delete()
+            
             user.delete()
             return {
                 "message": "User deleted successfully!"+str(user.user),
@@ -586,4 +590,60 @@ def search_users(search_string):
         }, 500
 
 
-
+#  get user and user profile  by username
+@app.route("/api/users/<string:username>", methods=["GET"] , endpoint="get_user_by_username")
+@token_required
+def get_user_by_username(current_user , username):
+    try:
+        user = User().get_by_username(username)
+        if user:
+            userprofle = Userprofile.query.filter_by(user_id=user.id).first()
+            return {
+                "message": "User fetched successfully!",
+                'user' :user.to_json(),
+                "profile": userprofle.to_json(),
+                "error": None
+            }, 200
+        
+        return {
+            "message": "User not found!",
+            "data": None,
+            "error": "Not Found"
+        }, 404
+    except Exception as e:
+        return {
+            "message": "Something went wrong!",
+            "error": str(e),
+            "data": None
+        }, 500
+    
+#  get all post by single user 
+@app.route("/api/users/<string:username>/posts", methods=["GET"] , endpoint="get_user_posts")
+@token_required
+def get_user_posts(current_user , username):
+    try:
+        user = User().get_by_username(username)
+        if user:
+            posts = Post.query.filter_by(user_id=user.id).all()
+            if posts:
+                return {
+                    "message": "Posts fetched successfully!",
+                    "data": [post.to_json() for post in posts],
+                    "error": None
+                }, 200
+            return {
+                "message": "No posts found!",
+                "data": None,
+                "error": "Not Found"
+            }, 404
+        return {
+            "message": "User not found!",
+            "data": None,
+            "error": "Not Found"
+        }, 404
+    except Exception as e:
+        return {
+            "message": "Something went wrong!",
+            "error": str(e),
+            "data": None
+        }, 500

@@ -1,15 +1,25 @@
 
-<nav class="navbar navbar-light "  style="background-color: #ffffff">
-    <div class="container-fluid">
-        <a class="navbar-brand " href="/">
-          <img src="/static/img/blogv.jpg" alt="logo" width="auto"  height="40"/>
-        </a>
-      <ul class="nav justify-content-end">
-        <li class="nav-item">
-          <a class="nav-link" style="color: black;" href="/register">Register</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" style="color: black;" href="/login">Login</a>
-        </li>
+<nav class="navbar navbar-expand-lg navbar-light  fixed-top"  style="background-color: #ffffff" > 
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/">
+      <img src="/static/img/blogv.jpg" alt="logo" width="auto"  height="40"/>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse justify-content-end" id="navbarNavAltMarkup">
+      <div class="nav  justify-content-end ">
+        <a class="nav-link" href="/"
+        >Home 
+        <span class="sr-only"></span></a
+      >
+      <a class="nav-link" href="#"><i  data-bs-toggle="modal" data-bs-target="#exampleModal"
+        style="color: black"> Create Blog</i></a>
+      <a class="nav-link" href=""
+        style="color: black">Profile</a>
+        <a class="nav-link" href=""
+          style="color: black">logout</a>
+      </div>
     </div>
-  </nav>
+  </div>
+</nav>

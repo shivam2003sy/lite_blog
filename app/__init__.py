@@ -1,6 +1,6 @@
 import os 
 # for api call from postman
-# from flask_cors import CORS 
+from flask_cors import CORS 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
@@ -18,6 +18,7 @@ ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 app = Flask(__name__)
 # CORS(app)
+CORS(app, resources={r"/*": {"origins": "http://localhost:8080"}})
 app.config.from_object('app.config.Config')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 

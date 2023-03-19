@@ -71,8 +71,51 @@ class Userprofile(db.Model):
     no_of_followers = db.Column(db.Integer)
     no_of_following = db.Column(db.Integer)
     image  = db.Column(db.BLOB)
+    bio = db.Column(db.String(100) , default='No bio')
     post = db.relationship('Post' , backref='Userprofile', lazy=True)
-    post_likes = db.relationship('Postlikes' , backref='Userprofile', lazy=True)
+        json_user = {
+            'id': self.id,
+            'post_id': self.post_id,
+            'user name ':user.user,
+            'user_id': self.user_id
+        }
+        return json_user
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+        return self
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+        return self
+
+class Comments(db.Model):
+    id = db.Column(db.Integer , primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('userprofile.id'))
+    comment = db.Column(db.String(100))
+    timestamp = db.Column(db.DateTime)
+    def __repr__(self):
+        return str(self.id) + ' - ' + str(self.post_id) + ' - ' + str(self.user_id) + ' - ' + str(self.comment)
+    def to_json(self):
+        user = User.query.filter_by(id=self.user_id).first()
+        json_user = {
+            'id': self.id,
+            'post_id': self.post_id,
+            'user name ':user.user,
+            'user_id': self.user_id,
+            'comment': self.comment,
+            'timestamp': self.timestamp,
+        }
+        return json_user
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+        return self
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+# https://www.youtube.com/watch?v=jYGcJ8wBVNs&list=PLZ2ps__7DhBaavCDmD5YWSo9QnY_mpTpY&index=13    post_likes = db.relationship('Postlikes' , backref='Userprofile', lazy=True)
     comments = db.relationship('Comments' , backref='Userprofile', lazy=True)
     def __repr__(self):
         return str(self.id) + ' - ' + str(self.user_id)
@@ -87,13 +130,15 @@ class Userprofile(db.Model):
             'no_of_posts': self.no_of_posts,
             'no_of_followers': self.no_of_followers,
             'no_of_following': self.no_of_following,
+            'image': self.image,
+            'bio': self.bio,
         }
         return json_user
     def delete(self):
         db.session.delete(self)
         db.session.commit()
         return self
-    def get_by_id(id):
+    def get_by_id(self,id):
         return Userprofile.query.filter_by(id=id).first()
 
 class Post(db.Model):
@@ -142,46 +187,3 @@ class Postlikes(db.Model):
         return str(self.id) + ' - ' + str(self.post_id) + ' - ' + str(self.user_id)
     def to_json(self):
         user = User.query.filter_by(id=self.user_id).first()
-        json_user = {
-            'id': self.id,
-            'post_id': self.post_id,
-            'user name ':user.user,
-            'user_id': self.user_id
-        }
-        return json_user
-    def delete(self):
-        db.session.delete(self)
-        db.session.commit()
-        return self
-    def save(self):
-        db.session.add(self)
-        db.session.commit()
-        return self
-
-class Comments(db.Model):
-    id = db.Column(db.Integer , primary_key=True)
-    post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
-    user_id = db.Column(db.Integer, db.ForeignKey('userprofile.id'))
-    comment = db.Column(db.String(100))
-    timestamp = db.Column(db.DateTime)
-    def __repr__(self):
-        return str(self.id) + ' - ' + str(self.post_id) + ' - ' + str(self.user_id) + ' - ' + str(self.comment)
-    def to_json(self):
-        user = User.query.filter_by(id=self.user_id).first()
-        json_user = {
-            'id': self.id,
-            'post_id': self.post_id,
-            'user name ':user.user,
-            'user_id': self.user_id,
-            'comment': self.comment,
-            'timestamp': self.timestamp,
-        }
-        return json_user
-    def delete(self):
-        db.session.delete(self)
-        db.session.commit()
-        return self
-    def save(self):
-        db.session.add(self)
-        db.session.commit()
-# https://www.youtube.com/watch?v=jYGcJ8wBVNs&list=PLZ2ps__7DhBaavCDmD5YWSo9QnY_mpTpY&index=13
