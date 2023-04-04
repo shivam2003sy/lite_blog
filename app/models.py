@@ -10,6 +10,20 @@ class Follow(db.Model):
                             primary_key=True)
     def __repr__(self):
         return   str(self.follower_id) + ' - ' + str(self.followed_id)
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+        return self
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+        return self
+    def to_json(self):
+        json_follow = {
+            'follower_id': self.follower_id,
+            'followed_id': self.followed_id,
+        }
+        return json_follow
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer,primary_key=True)
     user = db.Column(db.String(64),unique = True)

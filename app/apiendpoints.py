@@ -1,6 +1,6 @@
 from logging import Logger
 from app import app , api 
-from app.models import User
+from app.models import Follow, User
 from flask import request, jsonify
 import jwt
 from datetime import datetime 
@@ -89,6 +89,34 @@ def login_api():
         }, 500
 
 
+# get all users
+@app.route("/api/all", methods=["GET"], endpoint="get_all_users")
+@token_required
+def get_all_users(current_user):
+    try:
+        users = User.query.all()
+        if users:
+            users = [user.to_json() for user in users]
+            return {
+                "message": "Users fetched successfully!",
+                "data": users,
+                "error": None
+            }, 200
+        return {
+            "message": "No users found!",
+            "data": None,
+            "error": "Not Found"
+        }, 404
+    except Exception as e:
+        return {
+            "message": "Something went wrong!",
+            "error": str(e),
+            "data": None
+        }, 500
+
+
+
+
 #  delete User  sucess
 @app.route("/api/users", methods=["DELETE"])
 @token_required
@@ -117,7 +145,6 @@ def delete_user(current_user):
 
 
 
-#  get userprofile 
 
 #  read user and userProfile sucess
 @app.route("/api/user", methods=["GET"] , endpoint="get_user")
@@ -142,6 +169,27 @@ def get_user(current_user):
     }, 404
 
 
+#   get  user by username
+@app.route('/api/users/<string:username>', methods=['GET'] , endpoint="get_user_by_username")
+@token_required
+def get_user_by_username(current_user,username):
+    user = User.query.filter_by(user=username).first()
+    if user:
+        userprofile  = Userprofile.query.filter_by(user_id=user.id).first()
+        if userprofile:
+            return {
+                    "message": "User fetched successfully!",
+                    "data": {
+                        "user": user.to_json(),
+                        "userprofile": userprofile.to_json()
+                    },
+                    "error": None
+                }, 200
+    return {
+        "message": "User not found!",
+        "data": None,
+        "error": "Not Found"
+    }, 404
 
 # update userprofile sucess
 @app.route("/api/user", methods=["PUT"] , endpoint="update_user")
@@ -202,6 +250,27 @@ def get_posts(current_user):
         "error": "Not Found"
     }, 404
 
+# get all  post of username 
+@app.route('/api/users/<string:username>/posts', methods=['GET'] , endpoint="get_posts_by_username")
+@token_required
+def get_posts_by_username(current_user,username):
+    user = User.query.filter_by(user=username).first()
+    if user:
+        posts  = Post.query.filter_by(user_id=user.id).all()
+        if posts:
+            return {
+                    "message": "Posts fetched successfully!",
+                    "data": {
+                        "posts": [post.to_json() for post in posts]
+                    },
+                    "error": None
+                }, 200
+    return {
+        "message": "Posts not found!",
+        "data": None,
+        "error": "Not Found"
+    }, 404
+ 
 #single post  sucess
 @app.route("/api/posts/<int:post_id>", methods=["GET"] , endpoint="get_post")
 @token_required
@@ -588,3 +657,152 @@ def search_users(search_string):
 
 
 
+#  get  followers of user form table Follow
+@app.route("/api/users/<string:user>/followers", methods=["GET"] , endpoint="get_followers")
+@token_required
+def get_followers(current_user , user):
+    try:
+        user = User.query.filter_by(user=user).first()
+        if user:
+            followers = Follow.query.filter_by(followed_id=user.id).all()
+            if followers:
+                # get user names of followers
+                followers = [User.query.filter_by(id=follower.follower_id).first() for follower in followers]
+                return {
+                    "message": "Followers fetched successfully!",
+                    "data": [follower.to_json() for follower in followers],
+                    "error": None
+                }, 200
+            return {
+                "message": "No followers found!",
+                "data": None,
+                "error": "Not Found"
+            }, 404
+        return {
+            "message": "User not found!",
+            "data": None,
+            "error": "Not Found"
+        }, 404
+    except Exception as e:
+        return {
+            "message": "Something went wrong!",
+            "error": str(e),
+            "data": None
+        }, 500
+
+#  get  followings of user form table Follow
+@app.route("/api/users/<string:user>/followings", methods=["GET"] , endpoint="get_followings")
+@token_required
+def get_followings(current_user , user):
+    try:
+        user = User.query.filter_by(user=user).first()
+        if user:
+            followings = Follow.query.filter_by(follower_id=user.id).all() # kis kis ko follow krta h user
+            if followings:
+                # get user names of folowings
+                followings = [User.query.filter_by(id=following.followed_id).first() for following in followings]
+                return {
+                    "message": "Followings fetched successfully!",
+                    "data": [following.to_json() for following in followings],
+                    "error": None
+                }, 200
+            return {
+                "message": "No followings found!",
+                "data": None,
+                "error": "Not Found"
+            }, 404
+        return {
+            "message": "User not found!",
+            "data": None,
+            "error": "Not Found"
+        }, 404
+    except Exception as e:
+        return {
+            "message": "Something went wrong!",
+            "error": str(e),
+            "data": None
+        }, 500
+
+#  follow  or unfollow user 
+@app.route("/api/users/<string:user>/follow", methods=["POST"] , endpoint="follow_user")
+@token_required
+def follow_user(current_user , user):
+    try:
+        user = User.query.filter_by(user=user).first()
+        if user:
+            if user.id == current_user.id:
+                return {
+                    "message": "You can't follow yourself!",
+                    "data": None,
+                    "error": "Bad request"
+                }, 400
+            follow = Follow.query.filter_by(follower_id=current_user.id , followed_id=user.id).first()
+            if not follow:
+                follow = Follow(follower_id=current_user.id , followed_id=user.id)
+                follow.save()
+                followed = Userprofile.query.filter_by(user_id=user.id).first()
+                followed.no_of_followers += 1
+                followed.save()
+                follower = Userprofile.query.filter_by(user_id=current_user.id).first()
+                follower.no_of_following += 1
+                follower.save()
+                return {
+                    "message": "User followed successfully!",
+                    "data": follow.to_json(),
+                    "error": None
+                }, 200
+            return {
+                "message": "User already followed!",
+                "data": follow.to_json(),
+                "error": None
+            }, 200
+        
+        return {
+            "message": "User not found!",
+            "data": None,
+            "error": "Not Found"
+        }, 404
+    except Exception as e:
+        return {
+            "message": "Something went wrong!",
+            "error": str(e),
+            "data": None
+        }, 500
+
+#  unfollow user
+@app.route("/api/users/<string:user>/unfollow", methods=["POST"] , endpoint="unfollow_user")
+@token_required
+def unfollow_user(current_user , user):
+    try:
+        user = User.query.filter_by(user=user).first()
+        if user:
+            follow = Follow.query.filter_by(follower_id=current_user.id , followed_id=user.id).first()
+            if follow:
+                follow.delete()
+                followed = Userprofile.query.filter_by(user_id=user.id).first()
+                followed.no_of_followers -= 1
+                followed.save()
+                follower = Userprofile.query.filter_by(user_id=current_user.id).first()
+                follower.no_of_following -= 1
+                follower.save()
+                return {
+                    "message": "User unfollowed successfully!",
+                    "data": follow.to_json(),
+                    "error": None
+                }, 200
+            return {
+                "message": "You don't follow this user!",
+                "data": None,
+                "error": "Bad request"
+            }, 400
+        return {
+            "message": "User not found!",
+            "data": None,
+            "error": "Not Found"
+        }, 404
+    except Exception as e:
+        return {
+            "message": "Something went wrong!",
+            "error": str(e),
+            "data": None
+        }, 500
