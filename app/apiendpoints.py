@@ -254,7 +254,8 @@ def create_post(current_user):
             imgpath= filename,
             timestamp= datetime.now()
         )
-        user = Userprofile().get_by_id(current_user.id)
+        user = Userprofile().query.filter_by(user_id=current_user.id).first()
+
         user.no_of_posts = user.no_of_posts + 1
         user.save()
         post.save()
