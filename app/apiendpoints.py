@@ -417,6 +417,8 @@ def like_post(current_user , post_id):
                     post_id = post.id,
                 )
                 postlike.save()
+                post.no_of_likes = Postlikes.query.filter_by(post_id=post_id).count()
+                post.save()
                 return {
                     "message": "Post liked successfully!",
                     "data": postlike.to_json(),
@@ -446,6 +448,7 @@ def unlike_post(current_user , post_id):
                 postlike = Postlikes.query.filter_by(user_id=user.id , post_id=post.id).first()
                 if postlike:
                     postlike.delete()
+                    post.no_of_likes = Postlikes.query.filter_by(post_id=post_id).count()
                     return {
                         "message": "Post unliked successfully!",
                         "data": None,
@@ -839,6 +842,10 @@ def get_feeds(current_user):
             post["comments"] = [comment.to_json() for comment in post["comments"]]
             for comment in post["comments"]:
                 comment["user"] = User.query.filter_by(id=comment["user_id"]).first().to_json()
+            post['likes']=Postlikes.query.filter_by(post_id=post['id']).all()
+            post['likes']=[like.to_json() for like in post['likes']]
+            for like in post['likes']:
+                like['user']=User.query.filter_by(id=like['user_id']).first().to_json()
         return {
             "message": "Posts fetched successfully!",
             "data": posts,
