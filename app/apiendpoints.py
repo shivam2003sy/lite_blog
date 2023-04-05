@@ -287,12 +287,14 @@ def get_post(current_user , post_id):
     if post:
         postcomment = Comments.query.filter_by(post_id=post_id).all()
         postliked = Postlikes.query.filter_by(post_id=post_id).all()
+        user  = User.query.filter_by(id=post.user_id).first()
         return {
                     "message": "Post fetched successfully!",
                     "data": {
+                        "user": user.to_json(),
                         "post": post.to_json(),
-                        "post liked by": [postlike.to_json() for postlike in postliked],
-                        "post commented by": [postcomment.to_json() for postcomment in postcomment]
+                        "postlikedby": [postlike.to_json() for postlike in postliked],
+                        "postcommentedby": [postcomment.to_json() for postcomment in postcomment]
                     },
                     "error": None
                 }, 200
@@ -416,6 +418,14 @@ def like_post(current_user , post_id):
                     user_id = user.id,
                     post_id = post.id,
                 )
+            duplicate  = Postlikes.query.filter_by(user_id=user.id , post_id=post.id).first()
+            if duplicate:
+                return {
+                    "message": "Post already liked!",
+                    "data": None,
+                    "error": "Bad request"
+                }, 400
+            else:
                 postlike.save()
                 post.no_of_likes = Postlikes.query.filter_by(post_id=post_id).count()
                 post.save()
@@ -449,6 +459,8 @@ def unlike_post(current_user , post_id):
                 if postlike:
                     postlike.delete()
                     post.no_of_likes = Postlikes.query.filter_by(post_id=post_id).count()
+                    post.save()
+
                     return {
                         "message": "Post unliked successfully!",
                         "data": None,
@@ -842,10 +854,11 @@ def get_feeds(current_user):
             post["comments"] = [comment.to_json() for comment in post["comments"]]
             for comment in post["comments"]:
                 comment["user"] = User.query.filter_by(id=comment["user_id"]).first().to_json()
-            post['likes']=Postlikes.query.filter_by(post_id=post['id']).all()
-            post['likes']=[like.to_json() for like in post['likes']]
-            for like in post['likes']:
-                like['user']=User.query.filter_by(id=like['user_id']).first().to_json()
+
+            #  names of users who liked the post
+            likes = Postlikes.query.filter_by(post_id=post["id"]).all()
+            likes = [like.to_json() for like in likes]
+            post["likes"] = [User.query.filter_by(id=like["user_id"]).first().to_json() for like in likes]
         return {
             "message": "Posts fetched successfully!",
             "data": posts,
