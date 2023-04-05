@@ -1,5 +1,5 @@
 from logging import Logger
-from app import app , api 
+from app import app , api ,db
 from app.models import Follow, User
 from flask import request, jsonify
 import jwt
@@ -10,6 +10,11 @@ from werkzeug.utils import secure_filename
 from app.util import allowed_file
 from app.models import User , Userprofile , Post , Postlikes , Comments
 import os
+from io import BytesIO
+from PIL import Image
+
+# Set the maximum image size
+MAX_IMAGE_SIZE = (500, 500)
 
 
 #  new user created  sucess
@@ -191,42 +196,45 @@ def get_user_by_username(current_user,username):
         "error": "Not Found"
     }, 404
 
-# update userprofile sucess
-@app.route("/api/user", methods=["PUT"] , endpoint="update_user")
+@app.route("/api/user", methods=["PUT"], endpoint="update_user")
 @token_required
 def update_user(current_user):
-    try:
-        data = request.get_json()
-        if not data:
-            return {
-                "message": "Please provide user details",
-                "data": None,
-                "error": "Bad request"
-            }, 400
-        user = User().get_by_id(current_user.id)
-        if user:
-            email = data.get("email")
-            duplicate  =User.query.filter_by(email=email).first()
-            if duplicate:
-                return {
-                    "message": "Email already exists!",
-                    "data": None,
-                    "error": "Bad Request"
-                }, 400
-            if email:
-                user.email = email
-            user.save()
+    userprofile = Userprofile.query.filter_by(user_id=current_user.id).first()
+    user = User.query.filter_by(id=current_user.id).first()
+    if request.form:
+        if "email" in request.form:
+            user.email = request.form['email']
+        if "image" in request.files:
+            file = request.files["image"]
+            # Check if the file has an allowed extension
+            if file and allowed_file(file.filename):
+                # Open and resize the image
+                image = Image.open(file)
+                image.thumbnail(MAX_IMAGE_SIZE)
+                # Convert the image to a bytes object
+                with BytesIO() as output:
+                    image.save(output, format="JPEG")
+                    blob_data = output.getvalue()
+                # Set the user profile image to the bytes object
+                userprofile.image = blob_data
+            else:
+                return {"error": "Invalid file type, allowed file types are jpg, jpeg, png, and gif."}, 400
+        userprofile.save()
+        user.save()
         return {
-            "message": "User updated successfully!",
-            "data": user.to_json(),
+            "message": "User profile updated successfully!",
+            "data": {
+                "user": user.to_json(),
+                "userprofile": userprofile.to_json()
+            },
             "error": None
         }, 200
-    except Exception as e:
-        return {
-            "message": "Something went wrong!",
-            "error": str(e),
-            "data": None
-        }, 500
+    else:
+        return {"error": "User not found."}, 404
+
+
+
+
 
 
 # read Posts sucess
@@ -478,9 +486,16 @@ def comment_post(current_user , post_id):
                     timestamp = datetime.now()
                 )
                 comment.save()
+                
+                #   all comment on post with username
+                comments = Comments.query.filter_by(post_id=post_id).all()
+                comments = [comment.to_json() for comment in comments]
+                for comment in comments:
+                    user  = User().get_by_id(comment['user_id'])
+                    comment['user'] = user.to_json()
                 return {
-                    "message": "Comment posted successfully!",
-                    "data": comment.to_json(),
+                    "message": "Comment added successfully!",
+                    "data": comments,
                     "error": None
                 }, 201
         return {
@@ -806,3 +821,32 @@ def unfollow_user(current_user , user):
             "error": str(e),
             "data": None
         }, 500
+    
+@app.route("/api/feeds", methods=["GET"] , endpoint="get_feeds")
+@token_required
+def get_feeds(current_user):
+    following = Follow.query.filter_by(follower_id=current_user.id).all()
+    following = [following.followed_id for following in following]
+    following.append(current_user.id)
+    posts = Post.query.filter(Post.user_id.in_(following)).order_by(Post.timestamp.desc()).all()
+    if posts:
+        posts = [post.to_json() for post in posts]
+        for post in posts:
+            userid  = Post.query.filter_by(id=post['id']).first().user_id
+            user = User.query.filter_by(id=userid).first()
+            post["user"] = user.to_json()
+            post["comments"] = Comments.query.filter_by(post_id=post["id"]).all()
+            post["comments"] = [comment.to_json() for comment in post["comments"]]
+            for comment in post["comments"]:
+                comment["user"] = User.query.filter_by(id=comment["user_id"]).first().to_json()
+        return {
+            "message": "Posts fetched successfully!",
+            "data": posts,
+            "error": None
+        }, 200
+    return {
+        "message": "No posts found!",
+        "data": None,
+        "error": "Not Found"
+    }, 404
+                     
