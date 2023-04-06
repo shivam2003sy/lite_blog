@@ -1,1 +1,1 @@
-celery -A app.celery beat --loglevel=info
+celery -A app.celery beat --max-interval 1 --loglevel=info
