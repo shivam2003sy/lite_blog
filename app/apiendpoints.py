@@ -869,4 +869,45 @@ def get_feeds(current_user):
         "data": None,
         "error": "Not Found"
     }, 404
-                     
+            
+
+
+
+
+#  celery tasks
+from app import tasks
+@app.route("/api/tasks/<string:name>", methods=["GET"] , endpoint="get_tasks")
+def get_tasks(name):
+    jobs = tasks.sayhello.apply_async(args=[name])
+    result = jobs.wait()
+    return {
+        "message": "Task added to queue!",
+        "data":str(jobs) ,
+        "result" : result,
+        "error": None
+    }, 200
+
+# run task print date
+@app.route("/api/tasks", methods=["GET"] , endpoint="get_date")
+def get_date():
+    jobs = tasks.print_current_time.apply_async()
+    result = jobs.wait()
+    return {
+        "message": "Task added to queue!",
+        "data":str(jobs) ,
+        "result" : result,
+        "error": None
+    }, 200
+
+#  send mail using celery send_mail task
+@app.route('/send_email', methods=['POST'])
+def trigger_send_email():
+    subject = 'testing'
+    sender = 'shivam2003sy@outlook.com'
+    recipients = ['shivam2003sy@gmail.com', 'ankitayadav80048@gmail.com']
+    text_body = 'Plain text'
+    html_body = '<h1>I lOVE YOU ANKITA</h1> <h3> will you mary me <h3><img src="https://images.unsplash.com/photo-1606041008023-472dfb5e530f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=388&q=80" alt="flower">'
+    
+    # Trigger the Celery task asynchronously
+    tasks.send_email.apply_async(args=[subject, sender, recipients, text_body, html_body])
+    return 'Email task scheduled'
