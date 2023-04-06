@@ -911,3 +911,78 @@ def trigger_send_email():
     # Trigger the Celery task asynchronously
     tasks.send_email.apply_async(args=[subject, sender, recipients, text_body, html_body])
     return 'Email task scheduled'
+
+
+#  blog_to_csv task
+@app.route("/api/export/<username>", methods=["GET"] , endpoint="blog_to_csv")
+def blog_to_csv(username):
+    user = User.query.filter_by(user=username).first()
+    if user:
+        jobs = tasks.blog_to_csv.apply_async(args=[username])
+        result = jobs.wait()
+        # trigger when mail sent
+        if result:
+            return {
+                "message": "Task added to queue!",
+                "data":str(jobs) ,
+                "result" : result,
+                "error": None
+            }, 200
+        return {
+            "message": "Something went wrong!",
+            "data": None,
+            "error": "Internal server error"
+        }, 500
+    return {
+        "message": "User not found!",
+        "data": None,
+        "error": "Not Found"
+    }, 404
+
+#  csv_to_blog task
+
+@app.route("/api/import", methods=["POST"] , endpoint="csv_to_blog")
+@token_required
+def csv_to_blog(current_user):
+    if request.method == "POST":
+        if "file" not in request.files:
+            return {
+                "message": "No file found!.",
+                "data": None,
+                "error": "Bad request"
+            }, 400
+        file = request.files["file"]
+        if file.filename == "":
+            return {
+                "message": "No file found!",
+                "data": None,
+                "error": "Bad request"
+            }, 400
+        if file:
+            filename = '{}_blog.csv'.format(current_user.user)
+            file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+            jobs = tasks.csv_to_blog.apply_async(args=[filename , current_user.id])
+            result = jobs.wait()
+            if result:
+                return {
+                    "message": "Task added to queue!",
+                    "data":str(jobs) ,
+                    "result" : result,
+                    "error": None
+                }, 200
+            return {
+                "message": "Something went wrong!",
+                "data": None,
+                "error": "Internal server error"
+            }, 500
+        return {
+            "message": "File not supported!",
+            "data": None,
+            "error": "Bad request"
+        }, 400
+    return {
+        "message": "Bad request!",
+        "data": None,
+        "error": "Bad request"
+    }, 400
+
