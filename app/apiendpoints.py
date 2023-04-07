@@ -869,4 +869,120 @@ def get_feeds(current_user):
         "data": None,
         "error": "Not Found"
     }, 404
-                     
+            
+
+
+
+
+#  celery tasks
+from app import tasks
+@app.route("/api/tasks/<string:name>", methods=["GET"] , endpoint="get_tasks")
+def get_tasks(name):
+    jobs = tasks.sayhello.apply_async(args=[name])
+    result = jobs.wait()
+    return {
+        "message": "Task added to queue!",
+        "data":str(jobs) ,
+        "result" : result,
+        "error": None
+    }, 200
+
+# run task print date
+@app.route("/api/tasks", methods=["GET"] , endpoint="get_date")
+def get_date():
+    jobs = tasks.print_current_time.apply_async()
+    result = jobs.wait()
+    return {
+        "message": "Task added to queue!",
+        "data":str(jobs) ,
+        "result" : result,
+        "error": None
+    }, 200
+
+#  send mail using celery send_mail task
+@app.route('/send_email', methods=['POST'])
+def trigger_send_email():
+    subject = 'testing'
+    sender = 'shivam2003sy@outlook.com'
+    recipients = ['shivam2003sy@gmail.com', 'ankitayadav80048@gmail.com']
+    text_body = 'Plain text'
+    html_body = '<h1>I lOVE YOU ANKITA</h1> <h3> will you mary me <h3><img src="https://images.unsplash.com/photo-1606041008023-472dfb5e530f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=388&q=80" alt="flower">'
+    
+    # Trigger the Celery task asynchronously
+    tasks.send_email.apply_async(args=[subject, sender, recipients, text_body, html_body])
+    return 'Email task scheduled'
+
+
+#  blog_to_csv task
+@app.route("/api/export/<username>", methods=["GET"] , endpoint="blog_to_csv")
+def blog_to_csv(username):
+    user = User.query.filter_by(user=username).first()
+    if user:
+        jobs = tasks.blog_to_csv.apply_async(args=[username])
+        result = jobs.wait()
+        # trigger when mail sent
+        if result:
+            return {
+                "message": "Task added to queue!",
+                "data":str(jobs) ,
+                "result" : result,
+                "error": None
+            }, 200
+        return {
+            "message": "Something went wrong!",
+            "data": None,
+            "error": "Internal server error"
+        }, 500
+    return {
+        "message": "User not found!",
+        "data": None,
+        "error": "Not Found"
+    }, 404
+
+#  csv_to_blog task
+
+@app.route("/api/import", methods=["POST"] , endpoint="csv_to_blog")
+@token_required
+def csv_to_blog(current_user):
+    if request.method == "POST":
+        if "file" not in request.files:
+            return {
+                "message": "No file found!.",
+                "data": None,
+                "error": "Bad request"
+            }, 400
+        file = request.files["file"]
+        if file.filename == "":
+            return {
+                "message": "No file found!",
+                "data": None,
+                "error": "Bad request"
+            }, 400
+        if file:
+            filename = '{}_blog.csv'.format(current_user.user)
+            file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+            jobs = tasks.csv_to_blog.apply_async(args=[filename , current_user.id])
+            result = jobs.wait()
+            if result:
+                return {
+                    "message": "Task added to queue!",
+                    "data":str(jobs) ,
+                    "result" : result,
+                    "error": None
+                }, 200
+            return {
+                "message": "Something went wrong!",
+                "data": None,
+                "error": "Internal server error"
+            }, 500
+        return {
+            "message": "File not supported!",
+            "data": None,
+            "error": "Bad request"
+        }, 400
+    return {
+        "message": "Bad request!",
+        "data": None,
+        "error": "Bad request"
+    }, 400
+
