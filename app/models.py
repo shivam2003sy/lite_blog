@@ -66,6 +66,7 @@ class User(UserMixin, db.Model):
         'user': self.user,
             'email': self.email,
             'last_seen': self.last_seen,
+            'email_verified': self.email_verified,
         }
         return json_user
     def from_json(self, json_user):
