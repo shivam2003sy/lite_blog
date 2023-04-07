@@ -662,28 +662,28 @@ def update_comment(current_user , post_id , comment_id):
 
 
 
-# search users with string 
-@app.route("/api/users/search/<string:search_string>", methods=["GET"] , endpoint="search_users")
-def search_users(search_string):
-    try:
-        users = User.query.filter(User.user.ilike("%"+search_string+"%")).all()
-        if users:
-            return {
-                    "message": "Users fetched successfully!",
-                    "data": [user.to_json() for user in users],
-                    "error": None
-                }, 200
-        return {
-                "message": "No users found!",
-                "data": None,
-                "error": "Not Found"
-            }, 404
-    except Exception as e:
-        return {
-            "message": "Something went wrong!",
-            "error": str(e),
-            "data": None
-        }, 500
+# # search users with string 
+# @app.route("/api/users/search/<string:search_string>", methods=["GET"] , endpoint="search_users")
+# def search_users(search_string):
+#     try:
+#         users = User.query.filter(User.user.ilike("%"+search_string+"%")).all()
+#         if users:
+#             return {
+#                     "message": "Users fetched successfully!",
+#                     "data": [user.to_json() for user in users],
+#                     "error": None
+#                 }, 200
+#         return {
+#                 "message": "No users found!",
+#                 "data": None,
+#                 "error": "Not Found"
+#             }, 404
+#     except Exception as e:
+#         return {
+#             "message": "Something went wrong!",
+#             "error": str(e),
+#             "data": None
+#         }, 500
 
 
 
@@ -986,3 +986,19 @@ def csv_to_blog(current_user):
         "error": "Bad request"
     }, 400
 
+
+
+
+#  search user functaionality
+@app.route('/api/users', methods=['GET'], endpoint='search_users')
+def search_users():
+    search_term = request.args.get('search')
+    # Perform user search logic here based on the search_term
+    # and return the results as JSON response
+    # Example:
+    users = User.query.filter(User.user.ilike("%"+search_term+"%")).all()
+    return {
+        "message": "Users fetched successfully!",
+        "data": [user.to_json() for user in users],
+        "error": None
+    }, 200
