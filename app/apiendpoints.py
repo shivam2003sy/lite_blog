@@ -3,7 +3,7 @@ from app import app , api ,db
 from app.models import Follow, User
 from flask import request, jsonify
 import jwt
-from datetime import datetime 
+from datetime import datetime
 from app.util import  token_required
 from flask_restful import Resource
 from werkzeug.utils import secure_filename
@@ -12,6 +12,7 @@ from app.models import User , Userprofile , Post , Postlikes , Comments
 import os
 from io import BytesIO
 from PIL import Image
+
 
 # Set the maximum image size
 MAX_IMAGE_SIZE = (500, 500)
@@ -36,7 +37,8 @@ def create_user():
     new_user = User(
         user=data["username"],
         email=data["email"],
-        password=data["password"]
+        password=data["password"],
+        last_seen=datetime.now()
     )
     new_user.save()
     user = User().get_by_username(data["username"])
@@ -78,7 +80,7 @@ def login_api():
                 }
             except Exception as e:
                 return {
-                    "error": "Something went wrong",
+                    "error": "Something went wrong here",
                     "message": str(e)
                 }, 500
         return {
@@ -88,7 +90,7 @@ def login_api():
         }, 404
     except Exception as e:
         return {
-                "message": "Something went wrong!",
+                "message": "Something went wrong! here is th error",
                 "error": str(e),
                 "data": None
         }, 500
@@ -1002,3 +1004,56 @@ def search_users():
         "data": [user.to_json() for user in users],
         "error": None
     }, 200
+
+
+#  call task verify email
+@app.route('/api/verify', methods=['POST'], endpoint='verify')
+@token_required
+def verify(current_user):
+    user = User.query.filter_by(id=current_user.id).first()
+    if user:
+        email = user.email
+    if email:
+        jobs = tasks.verify_email.apply_async(args=[email])
+        result = jobs.wait()
+        if result:
+            return {
+                "message": "Task added to queue!",
+                "data":str(jobs) ,
+                "result" : result,
+                "error": None
+            }, 200
+        return {
+            "message": "Something went wrong!",
+            "data": None,
+            "error": "Internal server error"
+        }, 500
+    return {
+        "message": "Email not found!",
+        "data": None,
+        "error": "Bad request"
+    }, 400
+
+# verify email
+@app.route('/api/verify/<email>', methods=['GET'], endpoint='verify_email')
+def verify_email(email):
+    user = User.query.filter_by(email=email).first()
+    if user:
+        if user.email_verified:
+            return {
+                "message": "Email already verified!",
+                "data": None,
+                "error": None
+            }, 200
+        user.email_verified = True
+        db.session.commit()
+        return {
+            "message": "Email verified successfully!",
+            "data": None,
+            "error": None
+        }, 200
+    return {
+        "message": "User not found!",
+        "data": None,
+        "error": "Not Found"
+    }, 404

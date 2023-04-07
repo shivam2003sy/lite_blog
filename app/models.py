@@ -2,12 +2,15 @@ from app import db
 from flask_login import UserMixin
 import jwt
 import time
+from datetime import datetime
 #  User models with UserMixin : 4 functions  from  flask_login
+
 class Follow(db.Model):
     follower_id = db.Column(db.Integer, db.ForeignKey('user.id'),
                             primary_key=True)
     followed_id = db.Column(db.Integer, db.ForeignKey('user.id'),
                             primary_key=True)
+    timestamp = db.Column(db.DateTime, default=datetime.now)
     def __repr__(self):
         return   str(self.follower_id) + ' - ' + str(self.followed_id)
     def save(self):
@@ -22,6 +25,7 @@ class Follow(db.Model):
         json_follow = {
             'follower_id': self.follower_id,
             'followed_id': self.followed_id,
+            'timestamp': self.timestamp
         }
         return json_follow
 class User(UserMixin, db.Model):
@@ -29,6 +33,8 @@ class User(UserMixin, db.Model):
     user = db.Column(db.String(64),unique = True)
     email = db.Column(db.String(120),unique = True)
     password = db.Column(db.String(500))
+    last_seen = db.Column(db.DateTime , default=datetime.now)
+    email_verified = db.Column(db.Boolean, default=False)
     userprofile = db.relationship('Userprofile' , backref='User', lazy=True , uselist=False)
     followed = db.relationship('Follow',
                                foreign_keys=[Follow.follower_id],
@@ -59,12 +65,14 @@ class User(UserMixin, db.Model):
             'id': self.id,
         'user': self.user,
             'email': self.email,
+            'last_seen': self.last_seen,
         }
         return json_user
     def from_json(self, json_user):
         self.user = json_user.get('user')
         self.email = json_user.get('email')
         self.password = json_user.get('password')
+        self.last_seen = datetime.now()
         return self
     def verify_password(self, password):
         return self.password == password
@@ -72,6 +80,9 @@ class User(UserMixin, db.Model):
     def login(self, username, password):
         user = User.query.filter_by(user=username).first()
         if user and user.verify_password(password):
+            #  add last seee
+            user.last_seen = datetime.now()
+            user.save()
             return user.to_json()
         return None
     def delete(self):
@@ -85,6 +96,7 @@ class Userprofile(db.Model):
     no_of_followers = db.Column(db.Integer)
     no_of_following = db.Column(db.Integer)
     image  = db.Column(db.BLOB)
+    report_type = db.Column(db.String(100) , default='html')
     post = db.relationship('Post' , backref='Userprofile', lazy=True)
     post_likes = db.relationship('Postlikes' , backref='Userprofile', lazy=True)
     comments = db.relationship('Comments' , backref='Userprofile', lazy=True)
@@ -101,6 +113,8 @@ class Userprofile(db.Model):
             'no_of_posts': self.no_of_posts,
             'no_of_followers': self.no_of_followers,
             'no_of_following': self.no_of_following,
+            'image': self.image,
+            'report_type': self.report_type
         }
         return json_user
     def delete(self):
@@ -152,6 +166,7 @@ class Postlikes(db.Model):
     id = db.Column(db.Integer , primary_key=True)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id') , nullable=False) 
     user_id = db.Column(db.Integer, db.ForeignKey('userprofile.id'), nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.now)
     def __repr__(self):
         return str(self.id) + ' - ' + str(self.post_id) + ' - ' + str(self.user_id)
     def to_json(self):
@@ -160,7 +175,8 @@ class Postlikes(db.Model):
             'id': self.id,
             'post_id': self.post_id,
             'user name ':user.user,
-            'user_id': self.user_id
+            'user_id': self.user_id,
+            'timestamp': self.timestamp,
         }
         return json_user
     def delete(self):
@@ -177,7 +193,7 @@ class Comments(db.Model):
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('userprofile.id'))
     comment = db.Column(db.String(100))
-    timestamp = db.Column(db.DateTime)
+    timestamp = db.Column(db.DateTime, default=datetime.now)
     def __repr__(self):
         return str(self.id) + ' - ' + str(self.post_id) + ' - ' + str(self.user_id) + ' - ' + str(self.comment)
     def to_json(self):
@@ -198,4 +214,3 @@ class Comments(db.Model):
     def save(self):
         db.session.add(self)
         db.session.commit()
-# https://www.youtube.com/watch?v=jYGcJ8wBVNs&list=PLZ2ps__7DhBaavCDmD5YWSo9QnY_mpTpY&index=13
