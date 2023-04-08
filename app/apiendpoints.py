@@ -10,10 +10,7 @@ from werkzeug.utils import secure_filename
 from app.util import allowed_file
 from app.models import User , Userprofile , Post , Postlikes , Comments
 import os
-from io import BytesIO
-from PIL import Image
-
-
+from time import perf_counter_ns
 # Set the maximum image size
 MAX_IMAGE_SIZE = (500, 500)
 
@@ -325,7 +322,7 @@ def get_posts_by_username(current_user,username):
 def get_post(current_user , post_id):
     post  = Post.query.filter_by(id=post_id).first()
     if post:
-        postcomment = Comments.query.filter_by(post_id=post_id).all()
+        postcomment = Comments.query.filter_by(post_id=post_id).all()      
         postliked = Postlikes.query.filter_by(post_id=post_id).all()
         user  = User.query.filter_by(id=post.user_id).first()
         return {
@@ -463,11 +460,14 @@ def like_post(current_user , post_id):
                 )
             duplicate  = Postlikes.query.filter_by(user_id=user.id , post_id=post.id).first()
             if duplicate:
+                duplicate.delete()
+                post.no_of_likes = Postlikes.query.filter_by(post_id=post_id).count()
+                post.save()
                 return {
-                    "message": "Post already liked!",
+                    "message": "Post unliked successfully!",
                     "data": None,
-                    "error": "Bad request"
-                }, 400
+                    "error": None
+                }, 201
             else:
                 postlike.save()
                 post.no_of_likes = Postlikes.query.filter_by(post_id=post_id).count()
@@ -489,37 +489,6 @@ def like_post(current_user , post_id):
             "data": None
         }, 500
 
-# unlike post sucessa
-@app.route("/api/posts/<int:post_id>/unlike", methods=["POST"] , endpoint="unlike_post")
-@token_required
-def unlike_post(current_user , post_id):
-    try:
-        user = User().get_by_id(current_user.id)
-        if user:
-            post = Post().get_by_id(post_id)
-            if post:
-                postlike = Postlikes.query.filter_by(user_id=user.id , post_id=post.id).first()
-                if postlike:
-                    postlike.delete()
-                    post.no_of_likes = Postlikes.query.filter_by(post_id=post_id).count()
-                    post.save()
-
-                    return {
-                        "message": "Post unliked successfully!",
-                        "data": None,
-                        "error": None
-                    }, 200
-        return {
-            "message": "Post not found!",
-            "data": None,
-            "error": "Not Found"
-        }, 404
-    except Exception as e:
-        return {
-            "message": "Something went wrong!",
-            "error": str(e),
-            "data": None
-        }, 500
 
 # comment on post sucess
 @app.route("/api/posts/<int:post_id>/comment", methods=["POST"] , endpoint="comment_post")
@@ -567,6 +536,49 @@ def comment_post(current_user , post_id):
             "error": str(e),
             "data": None
         }, 500
+
+
+# commnet with specific response
+@app.route("/api/posts/comment/<int:post_id>", methods=["POST"] , endpoint="comment_res")
+@token_required
+def comment_res(current_user , post_id):
+    try:
+        data = request.get_json()
+        if not data:
+            return {
+                "message": "Please provide comment details",
+                "data": None,
+                "error": "Bad request"
+            }, 400
+        user = User().get_by_id(current_user.id)
+        if user:
+            post = Post().get_by_id(post_id)
+            if post:
+                comment = Comments(
+                    user_id = user.id,
+                    post_id = post.id,
+                    comment = data.get("comment"),
+                    timestamp = datetime.now()
+                )
+                comment.save()
+                return {
+                    "message": "Comment added successfully!",
+                    "data": comment.to_json(),
+                    "error": None
+                }, 201
+        return {
+            "message": "Post not found!",
+            "data": None,
+            "error": "Not Found"
+        }, 404
+    except Exception as e:
+        return {
+            "message": "Something went wrong!",
+            "error": str(e),
+            "data": None
+        }, 500
+
+
 
 # delete comment sucess
 @app.route("/api/posts/<int:post_id>/comment/<int:comment_id>", methods=["DELETE"] , endpoint="delete_comment")
@@ -879,39 +891,105 @@ def unfollow_user(current_user , user):
             "error": str(e),
             "data": None
         }, 500
-    
-@app.route("/api/feeds", methods=["GET"] , endpoint="get_feeds")
+from app.dataaccess import get_post_details , get_following_posts
+
+
+@app.route("/api/feeds", methods=["GET"], endpoint="get_feeds")
 @token_required
 def get_feeds(current_user):
-    following = Follow.query.filter_by(follower_id=current_user.id).all()
-    following = [following.followed_id for following in following]
-    following.append(current_user.id)
+    start = perf_counter_ns()
+    following = get_following_posts(current_user)
     posts = Post.query.filter(Post.user_id.in_(following)).order_by(Post.timestamp.desc()).all()
     if posts:
         posts = [post.to_json() for post in posts]
         for post in posts:
-            userid  = Post.query.filter_by(id=post['id']).first().user_id
-            user = User.query.filter_by(id=userid).first()
+            post_data, user, comments, likes = get_post_details(post['id'])
             post["user"] = user.to_json()
-            post["comments"] = Comments.query.filter_by(post_id=post["id"]).all()
-            post["comments"] = [comment.to_json() for comment in post["comments"]]
+            post["comments"] = [comment.to_json() for comment in comments]
             for comment in post["comments"]:
                 comment["user"] = User.query.filter_by(id=comment["user_id"]).first().to_json()
+            post["likes"] = [User.query.filter_by(id=like.user_id).first().to_json() for like in likes]
 
-            #  names of users who liked the post
-            likes = Postlikes.query.filter_by(post_id=post["id"]).all()
-            likes = [like.to_json() for like in likes]
-            post["likes"] = [User.query.filter_by(id=like["user_id"]).first().to_json() for like in likes]
+        end = perf_counter_ns()
+        print("time taken to fetch posts: ", (end-start)/1000000)
         return {
             "message": "Posts fetched successfully!",
             "data": posts,
             "error": None
         }, 200
+
     return {
         "message": "No posts found!",
         "data": None,
         "error": "Not Found"
     }, 404
+
+
+
+# @app.route("/api/feeds", methods=["GET"] , endpoint="get_feeds")
+# @token_required
+# def get_feeds(current_user):
+#     start  = perf_counter_ns()
+#     following = get_following_posts(current_user)
+#     posts = Post.query.filter(Post.user_id.in_(following)).order_by(Post.timestamp.desc()).all()
+#     if posts:
+#         posts = [post.to_json() for post in posts]
+#         for post in posts:
+#             post_data, user, comments, likes = get_post_details(post['id'])
+#             post["user"] = user.to_json()
+#             post["comments"] = [comment.to_json() for comment in comments]
+#             for comment in post["comments"]:
+#                 comment["user"] = User.query.filter_by(id=comment["user_id"]).first().to_json()
+#             post["likes"] = [User.query.filter_by(id=like.user_id).first().to_json() for like in likes]
+
+#             # post["likes"] = [User.query.filter_by(id=like["user_id"]).first().to_json() for like in likes]
+#         end = perf_counter_ns()
+#         print("time taken to fetch posts: ", (end-start)/1000000)
+#         return {
+#             "message": "Posts fetched successfully!",
+#             "data": posts,
+#             "error": None
+#         }, 200
+
+#     return {
+#         "message": "No posts found!",
+#         "data": None,
+#         "error": "Not Found"
+#     }, 404
+    # following = Follow.query.filter_by(follower_id=current_user.id).all()
+    # following = [following.followed_id for following in following]
+    # following.append(current_user.id)
+    # posts = Post.query.filter(Post.user_id.in_(following)).order_by(Post.timestamp.desc()).all()
+    # if posts:
+    #     posts = [post.to_json() for post in posts]
+    #     for post in posts:
+    #         userid  = Post.query.filter_by(id=post['id']).first().user_id
+    #         user = User.query.filter_by(id=userid).first()
+    #         post["user"] = user.to_json()
+    #         post["comments"] = Comments.query.filter_by(post_id=post["id"]).all()
+    #         post["comments"] = [comment.to_json() for comment in post["comments"]]
+    #         for comment in post["comments"]:
+    #             comment["user"] = User.query.filter_by(id=comment["user_id"]).first().to_json()
+
+    #         #  names of users who liked the post
+    #         likes = Postlikes.query.filter_by(post_id=post["id"]).all()
+    #         likes = [like.to_json() for like in likes]
+    #         post["likes"] = [User.query.filter_by(id=like["user_id"]).first().to_json() for like in likes]
+    #     end = perf_counter_ns()
+    #     # print("time taken to fetch posts: " , (end-start)/1000000)
+    #     # prict end - start in sec
+    #     print("time taken to fetch posts: " , (end-start))
+    #     return {
+    #         "message": "Posts fetched successfully!",
+    #         "data": posts,
+    #         "error": None
+    #     }, 200
+   
+    # return {
+    #     "message": "No posts found!",
+    #     "data": None,
+    #     "error": "Not Found"
+    # }, 404
             
 
 
@@ -1031,16 +1109,19 @@ def csv_to_blog(current_user):
     }, 400
 
 
-
-
 #  search user functaionality
+from app.dataaccess import get_user
 @app.route('/api/users', methods=['GET'], endpoint='search_users')
 def search_users():
     search_term = request.args.get('search')
     # Perform user search logic here based on the search_term
     # and return the results as JSON response
     # Example:
-    users = User.query.filter(User.user.ilike("%"+search_term+"%")).all()
+    start = perf_counter_ns()
+    users = get_user(search_term)
+    # users = User.query.filter(User.user.like('%' + search_term + '%')).all()
+    end = perf_counter_ns()
+    print("time taken to search user : ", (end - start) / 1000000)
     return {
         "message": "Users fetched successfully!",
         "data": [user.to_json() for user in users],

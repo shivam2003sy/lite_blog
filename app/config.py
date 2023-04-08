@@ -18,3 +18,11 @@ class Config():
     MAIL_USE_TLS = True
     MAIL_USERNAME = 'shivam2003sy@outlook.com'
     MAIL_PASSWORD = 'kstswoogmkexfome'
+    # FLASK CACHE
+    CACHE_TYPE = 'RedisCache'
+    CACHE_REDIS_HOST = 'localhost'
+    CACHE_DEFAULT_TIMEOUT = 300
+    CACHE_REDIS_PORT = 6379
+    CACHE_REDIS_DB = '4'
+    CACHE_DEFAULT_TIMEOUT = 300
+

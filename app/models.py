@@ -36,16 +36,16 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(500))
     last_seen = db.Column(db.DateTime , default=datetime.now)
     email_verified = db.Column(db.Boolean, default=False)
-    userprofile = db.relationship('Userprofile' , backref='User', lazy=True , uselist=False)
+    userprofile = db.relationship('Userprofile' , backref='User', lazy='subquery' , uselist=False)
     followed = db.relationship('Follow',
                                foreign_keys=[Follow.follower_id],
-                               backref=db.backref('follower', lazy='joined'),
-                               lazy='dynamic',
+                               backref=db.backref('follower', lazy='subquery'),
+                               lazy='subquery',
                                cascade='all, delete-orphan')
     followers = db.relationship('Follow',
                               foreign_keys=[Follow.followed_id],
-                              backref=db.backref('followed', lazy='joined'),
-                              lazy='dynamic',
+                              backref=db.backref('followed', lazy='subquery'),
+                              lazy='subquery',
                               cascade='all, delete-orphan')
     def get_by_id(self, id):
         return User.query.filter_by(id=id).first()
@@ -102,9 +102,9 @@ class Userprofile(db.Model):
     no_of_following = db.Column(db.Integer)
     image  = db.Column(db.BLOB)
     report_type = db.Column(db.String(100) , default='html')
-    post = db.relationship('Post' , backref='Userprofile', lazy=True)
-    post_likes = db.relationship('Postlikes' , backref='Userprofile', lazy=True)
-    comments = db.relationship('Comments' , backref='Userprofile', lazy=True)
+    post = db.relationship('Post' , backref='Userprofile', lazy='subquery')
+    post_likes = db.relationship('Postlikes' , backref='Userprofile', lazy='subquery')
+    comments = db.relationship('Comments' , backref='Userprofile', lazy='subquery')
     def __repr__(self):
         return str(self.id) + ' - ' + str(self.user_id)
     def save(self):   
@@ -143,8 +143,8 @@ class Post(db.Model):
     timestamp = db.Column(db.DateTime)
     no_of_likes = db.Column(db.Integer , default=0)
     user_id = db.Column(db.Integer, db.ForeignKey('userprofile.id'))
-    post_likes = db.relationship('Postlikes' , backref='Post', lazy=True )
-    comments = db.relationship('Comments' , backref='Post', lazy=True )
+    post_likes = db.relationship('Postlikes' , backref='Post', lazy='subquery')
+    comments = db.relationship('Comments' , backref='Post', lazy='subquery')
     # user = db.relationship('Userprofile' , backref='Post', lazy=True )
     def __repr__(self):
         return str(self.id) + ' - ' + str(self.title)
@@ -184,7 +184,7 @@ class Postlikes(db.Model):
         json_user = {
             'id': self.id,
             'post_id': self.post_id,
-            'user name ':user.user,
+            'username':user.user,
             'user_id': self.user_id,
             'timestamp': self.timestamp,
         }
@@ -211,7 +211,7 @@ class Comments(db.Model):
         json_user = {
             'id': self.id,
             'post_id': self.post_id,
-            'user name ':user.user,
+            'username':user.user,
             'user_id': self.user_id,
             'comment': self.comment,
             'timestamp': self.timestamp,

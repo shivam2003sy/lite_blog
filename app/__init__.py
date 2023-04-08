@@ -8,10 +8,11 @@ from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
 from flask_restful import Api
 from flask_mail import Mail
-
-
-
 from celery import Celery
+from flask_caching import Cache
+
+
+
 #file directory
 basedir = os.path.abspath(os.path.dirname(__file__))
 #images will be uploaded here
@@ -36,6 +37,8 @@ celery = Celery(app)
 # flask mail
 mail =None
 mail = Mail(app)
+cache = None
+cache = Cache(app)
 
 celery.conf.update({
     'broker_url': app.config['CELERY_BROKER_URL'],
