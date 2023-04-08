@@ -1,6 +1,6 @@
 from app import celery , mail , app , db
 from flask_mail import Message
-from app.models import Post , User , Postlikes , Comments , User ,Follow
+from app.models import Post , User , Postlikes , Comments , User ,Follow ,Userprofile
 from celery.schedules import crontab
 
 # @celery.on_after_configure.connect
@@ -59,6 +59,8 @@ def blog_to_csv(username):
 import csv
 import os
 import datetime
+import uuid
+import random
 @celery.task
 def csv_to_blog(filename,user_id):
     print(filename)
@@ -68,12 +70,22 @@ def csv_to_blog(filename,user_id):
         for row in reader:
             #  uniques id
             total_post = Post.query.all()
-            row[0] = len(total_post) + 1
+            while True:
+                id = random.randint(1, 100000)
+                for post in total_post:
+                    if post.id == id:
+                        break
+                else:
+                    break
+            row[0] = id
             row[4] = datetime.datetime.strptime(row[4], '%Y-%m-%d %H:%M:%S.%f')
             post = Post(id=row[0],title=row[1], caption=row[2], imgpath=row[3], timestamp=row[4], no_of_likes=row[5], user_id=user_id)
+            profile = Userprofile.query.filter_by(user_id=user_id).first()
+            profile.no_of_posts =  profile.no_of_posts + 1
+            profile.update()
             db.session.add(post)
             db.session.commit()
-            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+    os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
     return {
             'status': 'success',
             'message': 'CSV file has been uploaded'

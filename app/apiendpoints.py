@@ -125,13 +125,46 @@ def get_all_users(current_user):
 
 
 #  delete User  sucess
-@app.route("/api/users", methods=["DELETE"])
+@app.route("/api/users/delete", methods=["POST"])
 @token_required
 def delete_user(current_user):
     try:
+        data = request.get_json()
+        if not data or not data["password"]:
+            return {
+                "message": "Please provide password!",
+                "data": None,
+                "error": "Bad Request"
+            }, 400
         user = User().get_by_id(current_user.id)
         if user:
+            if not user.password == data["password"]:
+                return {
+                    "message": "Invalid password!",
+                    "data": None,
+                    "error": "Bad Request"
+                }, 400
+            Userprofile .query.filter_by(user_id=current_user.id).delete()
+            Post.query.filter_by(user_id=current_user.id).delete()
+            Postlikes.query.filter_by(user_id=current_user.id).delete()
+            Comments.query.filter_by(user_id=current_user.id).delete()
+            Follow.query.filter_by(followed_id=current_user.id).delete()
+            #  decrease the no of followers of the user who is following the current user
+            followers = Follow.query.filter_by(followed_id=current_user.id).all()
+            for follower in followers:
+                userprofile = Userprofile.query.filter_by(user_id=follower.follower_id).first()
+                userprofile.no_of_followers -= 1
+                userprofile.save()
+            Follow.query.filter_by(follower_id=current_user.id).delete()
+            #  decrease the no of following of the user who is followed by the current user
+            followings = Follow.query.filter_by(follower_id=current_user.id).all()
+            for following in followings:
+                userprofile = Userprofile.query.filter_by(user_id=following.followed_id).first()
+                userprofile.no_of_following -= 1
+                userprofile.save()
+
             user.delete()
+
             return {
                 "message": "User deleted successfully!"+str(user.user),
                 "data": None,
@@ -203,38 +236,43 @@ def get_user_by_username(current_user,username):
 def update_user(current_user):
     userprofile = Userprofile.query.filter_by(user_id=current_user.id).first()
     user = User.query.filter_by(id=current_user.id).first()
-    if request.form:
-        if "email" in request.form:
-            user.email = request.form['email']
-        if "image" in request.files:
-            file = request.files["image"]
-            # Check if the file has an allowed extension
-            if file and allowed_file(file.filename):
-                # Open and resize the image
-                image = Image.open(file)
-                image.thumbnail(MAX_IMAGE_SIZE)
-                # Convert the image to a bytes object
-                with BytesIO() as output:
-                    image.save(output, format="JPEG")
-                    blob_data = output.getvalue()
-                # Set the user profile image to the bytes object
-                userprofile.image = blob_data
-            else:
-                return {"error": "Invalid file type, allowed file types are jpg, jpeg, png, and gif."}, 400
-        userprofile.save()
-        user.save()
+    if user:
+        # get form data
+        data = request.form 
+        if not data:
+            return {
+                "message": "Please provide user details",
+                "data": None,
+                "error": "Bad request"
+            }, 400
+        user.email = data["email"]
+        if data['report_type'] == 'html format':
+            userprofile.report_type = 'html'
+
+        else:
+            data['report_type'] == 'pdf'
+        # userprofile.image = data["image"]
+        # handel image and save it to the database
+        if request.files:
+            image = request.files['image']
+            # save image to the database
+            userprofile.image = image.read()
+        user.update()
+        userprofile.update()
         return {
-            "message": "User profile updated successfully!",
-            "data": {
-                "user": user.to_json(),
-                "userprofile": userprofile.to_json()
+            'message':  'User updated successfully!',
+            'data': {
+                'user': user.to_json(),
+                # 'userprofile': userprofile.to_json()
             },
-            "error": None
+            'error': None
         }, 200
-    else:
-        return {"error": "User not found."}, 404
-
-
+    return {
+        'message': 'User not found!',
+        'data': None,
+        'error': 'Not Found'
+    }, 404
+    
 
 
 
@@ -352,19 +390,19 @@ def create_post(current_user):
 def update_post(current_user , post_id):
     post  = Post.query.filter_by(id = post_id).first()
     app.logger.info("update post")
-    if request.form['title']:
-        title = request.form['title']
+    # json data
+    data = request.get_json()
+    # title = data['title']
+    if data['title']:
+        title = data['title']
         post.title = title
-    if request.form['description']:
-        description = request.form['description']
+    if data['description']:
+        description = data['description']
         post.caption = description
     post.timestamp = datetime.now()
     user = User().get_by_id(current_user.id)
     if user:
         post.save()
-        user = Userprofile().get_by_id(current_user.id)
-        user.no_of_posts = user.no_of_posts + 1
-        user.save()
         return {
             "message": "Post updated successfully!",
             "data": post.to_json(),
@@ -387,7 +425,10 @@ def delete_post(current_user , post_id):
                 comments = Comments.query.filter_by(post_id=post_id).all()
                 if comments:
                     for comment in comments:
-                        comment.delete() 
+                        comment.delete()
+                profile = Userprofile.query.filter_by(user_id=user.id).first()
+                profile.no_of_posts = profile.no_of_posts - 1
+                profile.save()
                 post.delete()
                 return {
                     "message": "Post deleted successfully!",
@@ -922,10 +963,11 @@ def blog_to_csv(username):
     if user:
         jobs = tasks.blog_to_csv.apply_async(args=[username])
         result = jobs.wait()
+        # result  = 'added to queue'
         # trigger when mail sent
         if result:
             return {
-                "message": "Task added to queue!",
+                "message": "Task added to queue! you will get a mail soon with the csv file",
                 "data":str(jobs) ,
                 "result" : result,
                 "error": None

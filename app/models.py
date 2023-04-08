@@ -3,6 +3,7 @@ from flask_login import UserMixin
 import jwt
 import time
 from datetime import datetime
+import base64
 #  User models with UserMixin : 4 functions  from  flask_login
 
 class Follow(db.Model):
@@ -90,6 +91,9 @@ class User(UserMixin, db.Model):
         db.session.delete(self)
         db.session.commit()
         return self
+    def update(self):
+        db.session.commit()
+        return self
 class Userprofile(db.Model):
     id=db.Column(db.Integer,primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), unique=True , nullable=False)
@@ -107,14 +111,17 @@ class Userprofile(db.Model):
         db.session.add( self )
         db.session.commit()
         return self
-    
+    #  convert image bolb to base64
+    def image_to_base64(self):
+        return base64.b64encode(self.image).decode('utf-8')
+
     def to_json(self):
         json_user = {
             'user_id': self.user_id,
             'no_of_posts': self.no_of_posts,
             'no_of_followers': self.no_of_followers,
             'no_of_following': self.no_of_following,
-            'image': self.image,
+            # 'image': self.image_to_base64(),
             'report_type': self.report_type
         }
         return json_user
@@ -124,7 +131,9 @@ class Userprofile(db.Model):
         return self
     def get_by_id(id):
         return Userprofile.query.filter_by(id=id).first()
-
+    def update(self):
+        db.session.commit()
+        return self
 class Post(db.Model):
     id = db.Column(db.Integer , primary_key=True)
     title = db.Column(db.String(100))
