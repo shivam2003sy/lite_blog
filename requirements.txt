@@ -60,8 +60,7 @@ vine==5.0.0
 wcwidth==0.2.6
 Werkzeug==2.0.2
 WTForms==2.3.3
-=======
-﻿aniso8601==9.0.1
+aniso8601==9.0.1
 autopep8==1.5.7
 bcrypt==3.2.0
 blinker==1.4
