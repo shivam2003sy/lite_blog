@@ -23,10 +23,14 @@ class Follow(db.Model):
         db.session.commit()
         return self
     def to_json(self):
+        following = User.query.filter_by(id=self.followed_id).first()
+        follower = User.query.filter_by(id=self.follower_id).first()
         json_follow = {
             'follower_id': self.follower_id,
             'followed_id': self.followed_id,
-            'timestamp': self.timestamp
+            'timestamp': self.timestamp,
+            'follower': follower.user,
+            'following': following.user
         }
         return json_follow
 class User(UserMixin, db.Model):
