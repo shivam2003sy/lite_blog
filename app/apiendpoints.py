@@ -1203,17 +1203,35 @@ def get_followers_of_user(current_user,username):
     }, 404
 
 
-#  get following of user
 
-@app.route('/api/following/<username> ', methods=['GET'], endpoint='get_following_of_user')
+# followings of user 
+@app.route('/api/followings/<username>', methods=['GET'], endpoint='get_followings_of_user')
 @token_required
-def get_following_of_user(current_user,username):
+def get_followings_of_user(current_user,username):
     user = User.query.filter_by(user=username).first()
     if user:
         following = Follow.query.filter_by(follower_id=user.id).all()
         return {
             "message": "Following fetched successfully!",
             "data": [follow.to_json() for follow in following],
+            "error": None
+        }, 200
+    return {
+        "message": "User not found!",
+        "data": None,
+        "error": "Not Found"
+    }, 404
+
+# followers of user
+@app.route('/api/followers/<username>', methods=['GET'], endpoint='get_followers_of_user2')
+@token_required
+def get_followers_of_user2(current_user,username):
+    user = User.query.filter_by(user=username).first()
+    if user:
+        followers = Follow.query.filter_by(followed_id=user.id).all()
+        return {
+            "message": "Followers fetched successfully!",
+            "data": [follower.to_json() for follower in followers],
             "error": None
         }, 200
     return {
